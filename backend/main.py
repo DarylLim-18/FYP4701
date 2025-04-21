@@ -8,12 +8,14 @@ async def root():
     return {"message": "Hello World"}
 
 @app.get("/moran")
-def run_moran():
+async def run_moran():
     """
     Run Moran's I analysis on the specified variable.
     """
-    shapefile_path = "shapefiles/CA_Counties.shp"
-    result = compute_morans_i(shapefile_path, variable)
-    return result
-
+    try:
+        shapefile_path = "shapefiles/CA_Counties.shp"
+        result = compute_morans_i(shapefile_path, variable)
+        return result
+    except Exception as e:
+        return {"status": "error", "error": e}
 
