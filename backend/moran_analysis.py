@@ -1,32 +1,32 @@
 # moran_analysis.py
-
 import geopandas as gpd
 from libpysal.weights import Queen
 from esda.moran import Moran
 
-def compute_morans_i(variable: str):
-    # Load shapefile
-    gdf = gpd.read_file("shapefiles/CA_Counties.shp")
+def compute_morans_i(shapefile_path: str, variable: str, year: str):
+    # Load the shapefile and asthma data (from previously cleaned sources)
+    gdf = gpd.read_file(shapefile_path)
+    asthma_df = pd.read_csv("data/current-asthma-prevalence-by-county-2015_2022.csv", encoding='latin1')
 
-    # Drop missing values
-    gdf = gdf.dropna(subset=[variable]) # Drops rows that doesnt have values for the respective column
-
-    # Generate spatial weights using Queen contiguity
-    # Queen = areas are considered neighbors if they share an edge OR a corner
-    w = Queen.from_dataframe(gdf)
+    # Filter asthma data by year
+    asthma_year_df = asthma_df[asthma_df['YEARS'] == year]
     
-    # Row-standardize the weights so each row sums to 1
-    # This prevents larger polygons from dominating the analysis
-    w.transform = 'r'
+    # Merge data and shapefile
+    merged = gdf.merge(asthma_year_df, left_on='NAME', right_on='COUNTY')
+    
+    # Ensure that the variable exists in the merged data
+    if variable not in merged.columns:
+        raise ValueError(f"Variable '{variable}' not found in the data.")
 
+    # Create spatial weights matrix
+    w = pysal.lib.weights.Queen.from_dataframe(merged)
+    w.transform = 'r'  # Row-standardize
+    
+    # Get the values for the variable (e.g., asthma prevalence)
+    variable_values = merged[variable].values
+    
     # Calculate Moran's I
-    # Pass the column of values and the spatial weights matrix
-    moran = Moran(gdf[variable], w)
-
-    return {
-        "moran_i": moran.I,            # The Moran's I statistic
-        "p_value": moran.p_sim,        # Simulated p-value (for statistical significance)
-        "z_score": moran.z_sim,        # Z-score from the permutation test
-        "expected_i": moran.EI_sim,    # Expected Moran’s I under null hypothesis (usually close to 0)
-        "observations": moran.n        # Number of spatial units analyzed
-    }
+    moran = pysal.explore.esda.Moran(variable_values, w)
+    
+    # Return results
+    return {"Moran's I": moran.I, "p-value": moran.p_sim}
