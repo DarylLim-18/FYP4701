@@ -1,0 +1,8 @@
+USE FIT4701;
+
+CREATE TABLE file (
+    id SERIAL PRIMARY KEY,
+    file_name VARCHAR(255),
+    file_data BYTEA,
+    upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
