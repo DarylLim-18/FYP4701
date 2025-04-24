@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException, Query
+from fastapi import FastAPI, UploadFile, File, HTTPException, Query, Path
 import psycopg2
 from psycopg2 import sql
 from datetime import datetime
@@ -198,4 +198,37 @@ async def upload_file(file: UploadFile = File(...)):
         return {"status": "success", "filename": file.filename}
     except Exception as e:
         print("Error uploading file:", str(e))  # LOG TO TERMINAL
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/delete/{file_id}")
+async def delete_file(file_id: int = Path(..., description="ID of the file to delete")):
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("DELETE FROM files WHERE file_id = %s", (file_id,))
+        conn.commit()
+
+        if cur.rowcount == 0:
+            raise HTTPException(status_code=404, detail="File not found")
+
+        cur.close()
+        conn.close()
+        return {"status": "success", "message": f"File with ID {file_id} deleted"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+
+@app.get("/list")
+async def list_files():
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT file_id, file_name FROM files")
+        files = cur.fetchall()
+        cur.close()
+        conn.close()
+
+        return [{"id": f[0], "file_name": f[1]} for f in files]
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
