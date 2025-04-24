@@ -98,7 +98,7 @@ def compute_morans_i_local(merged: GeoDataFrame, variable: str, year: str):
 
 def get_db_connection():
     return psycopg2.connect(
-        dbname="FIT4701",
+        dbname="postgres",
         user="postgres",
         password="hanikodi4701!",
         host="localhost",
@@ -177,7 +177,7 @@ async def upload_file(file: UploadFile = File(...)):
 
         # Connect to PostgreSQL
         conn = psycopg2.connect(
-            dbname="FIT4701",
+            dbname="postgres",
             user="postgres",
             password="hanikodi4701!",
             host="localhost",
