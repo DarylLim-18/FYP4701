@@ -1,4 +1,8 @@
-from fastapi import FastAPI, Query, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Query
+import psycopg2
+from psycopg2 import sql
+from datetime import datetime
+from backend.moran_analysis import compute_morans_i
 from fastapi.responses import JSONResponse
 import pandas as pd
 import geopandas as gpd
@@ -92,6 +96,15 @@ def compute_morans_i_local(merged: GeoDataFrame, variable: str, year: str):
     return merged.to_json()
 
 
+def get_db_connection():
+    return psycopg2.connect(
+        dbname="postgres",
+        user="postgres",
+        password="hanikodi4701!",
+        host="localhost",
+        port="5432"
+    )
+
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
@@ -156,3 +169,33 @@ async def get_coordinates():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/upload")
+async def upload_file(file: UploadFile = File(...)):
+    try:
+        # Read the contents of the uploaded file
+        contents = await file.read()
+
+        # Connect to PostgreSQL
+        conn = psycopg2.connect(
+            dbname="postgres",
+            user="postgres",
+            password="hanikodi4701!",
+            host="localhost",
+            port="5432"
+        )
+        cur = conn.cursor()
+
+        # Insert file into database
+        cur.execute("""
+            INSERT INTO files (file_name, file_data)
+            VALUES (%s, %s)
+        """, (file.filename, psycopg2.Binary(contents)))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return {"status": "success", "filename": file.filename}
+    except Exception as e:
+        print("Error uploading file:", str(e))  # LOG TO TERMINAL
+        raise HTTPException(status_code=500, detail=str(e))

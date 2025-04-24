@@ -3,3 +3,4 @@ pysal
 shapely
 fiona
 rtree
+psycopg2
