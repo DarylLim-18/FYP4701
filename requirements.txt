@@ -3,3 +3,7 @@ pysal
 shapely
 fiona
 rtree
+pandas
+numpy
+uvicorn
+fastapi
