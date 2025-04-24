@@ -1,5 +1,6 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, HTTPException
 import psycopg2
+from psycopg2 import sql
 from datetime import datetime
 from backend.moran_analysis import compute_morans_i
 
@@ -32,14 +33,31 @@ async def run_moran():
 
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
-    contents = await file.read()
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute(
-        "INSERT INTO file (file_name, file_data, upload_date) VALUES (%s, %s, %s)",
-        (file.filename, psycopg2.Binary(contents), datetime.now())
-    )
-    conn.commit()
-    cur.close()
-    conn.close()
-    return {"status": "success", "filename": file.filename}
+    try:
+        # Read the contents of the uploaded file
+        contents = await file.read()
+
+        # Connect to PostgreSQL
+        conn = psycopg2.connect(
+            dbname="FIT4701",
+            user="postgres",
+            password="hanikodi4701!",
+            host="localhost",
+            port="5432"
+        )
+        cur = conn.cursor()
+
+        # Insert file into database
+        cur.execute("""
+            INSERT INTO files (file_name, file_data)
+            VALUES (%s, %s)
+        """, (file.filename, psycopg2.Binary(contents)))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return {"status": "success", "filename": file.filename}
+    except Exception as e:
+        print("Error uploading file:", str(e))  # LOG TO TERMINAL
+        raise HTTPException(status_code=500, detail=str(e))
