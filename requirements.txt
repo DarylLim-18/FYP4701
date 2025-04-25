@@ -7,3 +7,5 @@ pandas
 numpy
 uvicorn
 fastapi
+psycopg2
+python-multipart
