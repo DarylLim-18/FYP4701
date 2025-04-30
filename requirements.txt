@@ -9,3 +9,4 @@ uvicorn
 fastapi
 psycopg2
 python-multipart
+scikit-learn
