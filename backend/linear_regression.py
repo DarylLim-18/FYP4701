@@ -132,6 +132,7 @@ def main():
             user_features.append(user_input)
             print(f"Added {user_input} to features")
       # Extend with other columns if added
+
     run_linear_regression(merged, user_features)
 
 

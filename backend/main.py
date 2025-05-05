@@ -19,9 +19,12 @@ gdf = gpd.read_file("backend/shapefiles/CA_Counties.shp")
 # Clean the dataset
 # After reading CSV
 asthma_df['YEARS'] = asthma_df['YEARS'].str.replace('\x96', '-', regex=False)
-asthma_df = asthma_df[asthma_df['AGE GROUP'] == 'All ages']
+#asthma_df = asthma_df[asthma_df['AGE GROUP'] == 'All ages']
+asthma_df = asthma_df.drop('COUNTIES GROUPED', axis=1, errors='coerce')
+asthma_df = asthma_df.drop('COMMENT', axis=1, errors='coerce')
 asthma_df['COUNTY'] = asthma_df['COUNTY'].str.strip().str.title()
 gdf['NAME'] = gdf['NAME'].str.strip().str.title()
+
 
 # Merge function
 def get_asthma_geodata(year: str):
@@ -71,7 +74,7 @@ def compute_morans_i_local(merged: GeoDataFrame, variable: str, year: str):
 
     merged['local_I'] = moran_local.Is
     merged['p_value'] = moran_local.p_sim
-    merged['z_score'] = moran_local.z_sim
+    merged['z_score'] = moran_local.z.tolist()
 
     # Classify cluster types
     cluster_labels = []
@@ -89,8 +92,7 @@ def compute_morans_i_local(merged: GeoDataFrame, variable: str, year: str):
                 cluster_labels.append('Not Significant')
         else:
             cluster_labels.append('Not Significant')
-    
-    merged['cluster'] = cluster_labels
+
 
     # Return GeoJSON for frontend display
     return merged.to_json()
