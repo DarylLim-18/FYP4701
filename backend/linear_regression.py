@@ -13,7 +13,7 @@ def load_data():
 
 
 def preprocess_asthma(asthma_df):
-    asthma_df = asthma_df[asthma_df['AGE GROUP'] == 'All ages'].copy()
+    asthma_df = asthma_df.copy()
     asthma_df.loc[:, 'COUNTY'] = asthma_df['COUNTY'].str.strip().str.title()
     asthma_df.loc[:, 'YEARS'] = asthma_df['YEARS'].str.replace('\x96', '-', regex=False)
 
@@ -25,6 +25,7 @@ def preprocess_asthma(asthma_df):
     )
     expanded['YEAR'] = expanded['YEAR'].astype(int)
     expanded['CURRENT PREVALENCE'] = pd.to_numeric(expanded['CURRENT PREVALENCE'], errors='coerce')
+    expanded = expanded.dropna(subset=['CURRENT PREVALENCE'])
     return expanded
 
 
@@ -116,24 +117,29 @@ def main():
     ozone_agg = preprocess_ozone(ozone)
     merged = merge_data(asthma_clean, gas_agg, ozone_agg)
     gas_vars.append('Ozone')  # Add Ozone to gas_vars for user selection
-
+    merged = merged.drop(columns=['COMMENT', 'COUNTIES GROUPED'])
+    merged.to_csv("data/all-togther.csv", index=False)  # Save merged data for reference
     # --- User defines features here ---
     user_features = []
-    while True:
-        print("\n--- Available Features ---")
-        print(f"Gas Variables: {gas_vars}")
-        print(f"Features: {user_features}")
-        user_input = input("Enter your features (exit = 'quit):\n")
-        if user_input.lower() == 'quit':
-            break
-        elif user_input in user_features:
-            print(f"gas variable {user_input} is already added")
-        else:
-            user_features.append(user_input)
-            print(f"Added {user_input} to features")
-      # Extend with other columns if added
+    # while True:
+    #     print("\n--- Available Features ---")
+    #     print(f"Gas Variables: {gas_vars}")
+    #     print(f"Features: {user_features}")
+    #     user_input = input("Enter your features (exit = 'quit):\n")
+    #     if user_input.lower() == 'quit':
+    #         break
+    #     elif user_input in user_features:
+    #         print(f"gas variable {user_input} is already added")
+    #     else:
+    #         user_features.append(user_input)
+    #         print(f"Added {user_input} to features")
+    #   # Extend with other columns if added
+    
+
+    
 
     run_linear_regression(merged, user_features)
+    
 
 
 if __name__ == "__main__":

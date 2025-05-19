@@ -25,7 +25,6 @@ asthma_df = asthma_df.drop('COMMENT', axis=1, errors='coerce')
 asthma_df['COUNTY'] = asthma_df['COUNTY'].str.strip().str.title()
 gdf['NAME'] = gdf['NAME'].str.strip().str.title()
 
-
 # Merge function
 def get_asthma_geodata(year: str):
     asthma_year_df = asthma_df[asthma_df['YEARS'] == year].copy()

@@ -1,32 +1,109 @@
 # moran_analysis.py
 import geopandas as gpd
 from libpysal.weights import Queen
-from esda.moran import Moran
+from esda.moran import Moran, Moran_Local
+import pandas as pd
+from geopandas import GeoDataFrame
+import numpy as np
 
-def compute_morans_i(shapefile_path: str, variable: str, year: str):
-    # Load the shapefile and asthma data (from previously cleaned sources)
-    gdf = gpd.read_file(shapefile_path)
-    asthma_df = pd.read_csv("data/current-asthma-prevalence-by-county-2015_2022.csv", encoding='latin1')
+asthma_df = pd.read_csv("data/current-asthma-prevalence-by-county-2015_2022.csv", encoding='latin1')
+gdf = gpd.read_file("backend/shapefiles/CA_Counties.shp")
 
-    # Filter asthma data by year
-    asthma_year_df = asthma_df[asthma_df['YEARS'] == year]
+# Clean the dataset
+# After reading CSV
+asthma_df['YEARS'] = asthma_df['YEARS'].str.replace('\x96', '-', regex=False)
+#asthma_df = asthma_df[asthma_df['AGE GROUP'] == 'All ages']
+asthma_df = asthma_df.drop('COUNTIES GROUPED', axis=1, errors='coerce')
+asthma_df = asthma_df.drop('COMMENT', axis=1, errors='coerce')
+asthma_df['COUNTY'] = asthma_df['COUNTY'].str.strip().str.title()
+gdf['NAME'] = gdf['NAME'].str.strip().str.title()
+
+
+
+def read_csv(file_path: str):
+    """
+    Reads a CSV file and returns a DataFrame.
+    """
+    try:
+        df = pd.read_csv(file_path, encoding='latin1')
+        return df
+    except Exception as e:
+        raise ValueError(f"Error reading CSV file: {e}")
     
-    # Merge data and shapefile
+def get_csv_columns(df: pd.DataFrame):
+    """
+    Returns the columns of a DataFrame.
+    """
+    return df.columns.tolist()
+
+
+# Merge function
+def get_asthma_geodata(year: str):
+    asthma_year_df = asthma_df[asthma_df['YEARS'] == year].copy()
+
+    if asthma_year_df.empty:
+        raise HTTPException(status_code=404, detail=f"No data found for year {year}")
+
+    asthma_year_df['CURRENT PREVALENCE'] = pd.to_numeric(asthma_year_df['CURRENT PREVALENCE'], errors='coerce')
     merged = gdf.merge(asthma_year_df, left_on='NAME', right_on='COUNTY')
-    
+    merged = merged.dropna(subset=['CURRENT PREVALENCE'])
+    return merged
+
+# Moran's I Analysis
+def compute_morans_i(merged: GeoDataFrame, variable: str):
     # Ensure that the variable exists in the merged data
     if variable not in merged.columns:
         raise ValueError(f"Variable '{variable}' not found in the data.")
 
     # Create spatial weights matrix
-    w = pysal.lib.weights.Queen.from_dataframe(merged)
+    w = Queen.from_dataframe(merged)
     w.transform = 'r'  # Row-standardize
     
     # Get the values for the variable (e.g., asthma prevalence)
     variable_values = merged[variable].values
     
     # Calculate Moran's I
-    moran = pysal.explore.esda.Moran(variable_values, w)
+    moran = Moran(variable_values, w)
     
     # Return results
-    return {"Moran's I": moran.I, "p-value": moran.p_sim}
+    return {
+        "Moran's I": moran.I, 
+        "z-value": moran.z.tolist(),
+        "p-value": moran.p_norm
+        }
+
+def compute_morans_i_local(merged: GeoDataFrame, variable: str):
+    merged = merged.copy()
+    
+    w = Queen.from_dataframe(merged)
+    w.transform = 'r'
+
+    x = merged[variable].values
+    x = np.nan_to_num(x)
+
+    moran_local = Moran_Local(x, w)
+
+    merged['local_I'] = moran_local.Is
+    merged['p_value'] = moran_local.p_sim
+    merged['z_score'] = moran_local.z.tolist()
+
+    # Classify cluster types
+    cluster_labels = []
+    for i, (Ii, sig, q) in enumerate(zip(moran_local.Is, moran_local.p_sim, moran_local.q)):
+        if sig < 0.05:
+            if q == 1:
+                cluster_labels.append('HH')  # High-High
+            elif q == 2:
+                cluster_labels.append('LH')  # Low-High
+            elif q == 3:
+                cluster_labels.append('LL')  # Low-Low
+            elif q == 4:
+                cluster_labels.append('HL')  # High-Low
+            else:
+                cluster_labels.append('Not Significant')
+        else:
+            cluster_labels.append('Not Significant')
+
+
+    # Return GeoJSON for frontend display
+    return merged.to_json()
