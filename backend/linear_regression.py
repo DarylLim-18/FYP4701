@@ -3,6 +3,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import train_test_split
+import matplotlib.pyplot as plt
+
 
 
 def load_data():
@@ -87,12 +91,12 @@ def merge_data(asthma_df, gas_agg, ozone_agg):
 def run_linear_regression(data, feature_cols, target_col='CURRENT PREVALENCE'):
     data = data.dropna(subset=feature_cols + [target_col])
     X = data[feature_cols]
-    Y = data[target_col]
+    y = data[target_col]
 
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
 
-    X_train, X_test, y_train, y_test = train_test_split(X_scaled, Y, test_size=0.2, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
     model = LinearRegression()
     model.fit(X_train, y_train)
 
@@ -107,7 +111,18 @@ def run_linear_regression(data, feature_cols, target_col='CURRENT PREVALENCE'):
     print("Coefficients:", model.coef_) # Represents the expected change in the target for one unit increase of the feature
     print("Intercept:", model.intercept_) # Predicted value of asthma prevalence when all features are 0
     print("\nSample of merged data:\n", data.head())
-
+    
+    plt.figure(figsize=(8, 6))
+    plt.scatter(y_test, y_pred, alpha=0.6, label="Predictions")
+    plt.plot([y.min(), y.max()], [y.min(), y.max()], 'r--', label="Ideal Fit")
+    plt.xlabel("Actual Prevalence")
+    plt.ylabel("Predicted Prevalence")
+    plt.title("Actual vs Predicted Asthma Prevalence")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+    
 
 def main():
     # Load and preprocess
@@ -118,27 +133,11 @@ def main():
     merged = merge_data(asthma_clean, gas_agg, ozone_agg)
     gas_vars.append('Ozone')  # Add Ozone to gas_vars for user selection
     merged = merged.drop(columns=['COMMENT', 'COUNTIES GROUPED'])
-    merged.to_csv("data/all-togther.csv", index=False)  # Save merged data for reference
+    
     # --- User defines features here ---
-    user_features = []
-    # while True:
-    #     print("\n--- Available Features ---")
-    #     print(f"Gas Variables: {gas_vars}")
-    #     print(f"Features: {user_features}")
-    #     user_input = input("Enter your features (exit = 'quit):\n")
-    #     if user_input.lower() == 'quit':
-    #         break
-    #     elif user_input in user_features:
-    #         print(f"gas variable {user_input} is already added")
-    #     else:
-    #         user_features.append(user_input)
-    #         print(f"Added {user_input} to features")
-    #   # Extend with other columns if added
+    user_features = ['SO2', 'Ozone', 'NO3', 'SO4']  # Default features
     
-
-    
-
-    run_linear_regression(merged, user_features)
+    run_linear_regression(merged, gas_vars)
     
 
 

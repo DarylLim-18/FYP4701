@@ -18,7 +18,24 @@ asthma_df = asthma_df.drop('COMMENT', axis=1, errors='coerce')
 asthma_df['COUNTY'] = asthma_df['COUNTY'].str.strip().str.title()
 gdf['NAME'] = gdf['NAME'].str.strip().str.title()
 
+def remove_empty_rows(df: pd.DataFrame, column: str):
+    """
+    Removes rows from a DataFrame where the specified column is empty.
+    """
+    if column not in df.columns:
+        raise ValueError(f"Column '{column}' not found in DataFrame.")
+    
+    return df.dropna(subset=[column])
 
+def remove_column(df: pd.DataFrame, column: str):
+    """
+    Removes a column from a DataFrame.
+    """
+    if column not in df.columns:
+        raise ValueError(f"Column '{column}' not found in DataFrame.")
+    
+    return df.drop(columns=[column])
+    
 
 def read_csv(file_path: str):
     """
@@ -35,6 +52,18 @@ def get_csv_columns(df: pd.DataFrame):
     Returns the columns of a DataFrame.
     """
     return df.columns.tolist()
+
+def merge_dataframes(gdf: gpd.GeoDataFrame, df2: pd.DataFrame, left_on: str, right_on: str):
+    """
+    Merges two DataFrames on specified columns.
+    """
+    
+    df2 = df2.copy()
+    gdf = gdf.copy()
+    if left_on not in gdf.columns or right_on not in df2.columns:
+        raise ValueError(f"Columns '{left_on}' or '{right_on}' not found in DataFrames.")
+    
+    return gdf.merge(df2, left_on=left_on, right_on=right_on)
 
 
 # Merge function
