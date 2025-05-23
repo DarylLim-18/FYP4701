@@ -112,7 +112,7 @@ def run_linear_regression(data, feature_cols, target_col='CURRENT PREVALENCE'):
     print("Intercept:", model.intercept_) # Predicted value of asthma prevalence when all features are 0
     print("\nSample of merged data:\n", data.head())
     
-    plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(8, 6), num='Linear Regression')
     plt.scatter(y_test, y_pred, alpha=0.6, label="Predictions")
     plt.plot([y.min(), y.max()], [y.min(), y.max()], 'r--', label="Ideal Fit")
     plt.xlabel("Actual Prevalence")

@@ -71,7 +71,7 @@ def run_rf_model(data, user_features):
     data['Predicted Prevalence'] = model.predict(X)
 
     # Plot actual vs predicted
-    plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(8, 6), num ='Random Forest Regression')
     plt.scatter(y_test, y_pred, alpha=0.6, label="Predictions")
     plt.plot([y.min(), y.max()], [y.min(), y.max()], 'r--', label="Ideal Fit")
     plt.xlabel("Actual Prevalence")
@@ -84,7 +84,7 @@ def run_rf_model(data, user_features):
 
     # Plot residuals
     residuals = y_test - y_pred
-    plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(8, 6), num='Random Forest Residuals')
     plt.scatter(y_pred, residuals, alpha=0.6)
     plt.axhline(0, color='red', linestyle='--')
     plt.xlabel("Predicted Prevalence")
@@ -105,7 +105,7 @@ def run_rf_model(data, user_features):
 
     # Feature importance
     importances = model.feature_importances_
-    plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(8, 6), num = 'Random Forest Feature Importance')
     plt.barh(user_features, importances)
     plt.xlabel("Feature Importance")
     plt.title("Random Forest Feature Importance")
@@ -127,3 +127,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
