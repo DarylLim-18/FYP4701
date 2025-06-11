@@ -20,6 +20,7 @@ export default function UploadModal({ onUploadSuccess }) {
   }, []);
 
   const handleSubmit = async () => {
+
     if (!selectedFile) return;
 
     setIsUploading(true);
@@ -28,8 +29,7 @@ export default function UploadModal({ onUploadSuccess }) {
     try {
       const formData = new FormData();
       formData.append('file', selectedFile);
-
-      const response = await fetch('/upload', {  // Changed to relative path
+      const response = await fetch('http://localhost:8000/upload', {  // Changed to relative path
         method: 'POST',
         body: formData,
       });
