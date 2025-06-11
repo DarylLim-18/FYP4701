@@ -368,3 +368,20 @@ def run_linear_regressions(target_variable: str = Query(..., description="Target
         raise HTTPException(status_code=500, detail=str(e))
     
 
+@app.get("/machine-learning/random-forest")
+def run_random_forest(target_variable: str = Query(..., description="Target variable for regression"),
+    feature_variables: list = Query(..., description="List of feature variables"),
+    file_id: int = Query(..., description="ID of the uploaded CSV file")):
+    try:
+        print(f"Running linear regression with target: {target_variable}, features: {feature_variables}, file_id: {file_id}")
+        data = retrieve_csv_table(file_id)
+        res = run_rf_model(
+            data=data,
+            feature_cols=feature_variables,
+            target_col=target_variable
+        )   
+        return res
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    

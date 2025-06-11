@@ -112,8 +112,11 @@ def run_rf_model(data, feature_cols, target_col='CURRENT_PREVALENCE'):
     plt.title("Random Forest Feature Importance")
     plt.tight_layout()
     plt.show()
+    
+    # return(model, data)
 
-    return model, data
+    return True
+
 
 def main():
     asthma, gas, ozone = load_data()

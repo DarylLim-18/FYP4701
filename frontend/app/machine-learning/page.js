@@ -210,10 +210,12 @@ export default function MLPage() {
   };
 
   const handleTrainModel = async () => {
-    if (!selectedAlgorithm || selectedAlgorithm.name !== 'Linear Regression') {
-      alert('Only Linear Regression is implemented for now.');
-      return;
-    }
+    // if (!selectedAlgorithm || selectedAlgorithm.name !== 'Linear Regression') {
+    //   alert('Only Linear Regression is implemented for now.');
+    //   return;
+    // }
+
+    const api = selectedAlgorithm.api;
 
     setIsTraining(true);
     try {
@@ -226,7 +228,7 @@ export default function MLPage() {
       queryParams.append("feature_variables", feature);
       });
 
-    const response = await fetch(`http://localhost:8000/machine-learning/linear-regression?${queryParams.toString()}`, {
+    const response = await fetch(`http://localhost:8000/machine-learning/${api}?${queryParams.toString()}`, {
       method: 'GET',
     });
 
@@ -246,8 +248,8 @@ export default function MLPage() {
 
 
   const mlAlgorithms = [
-    { id: 1, name: 'Linear Regression', type: 'regression' },
-    { id: 2, name: 'Random Forest', type: 'classification' },
+    { id: 1, name: 'Linear Regression', type: 'regression' , api: 'linear-regression' },
+    { id: 2, name: 'Random Forest', type: 'classification', api: 'random-forest' },
 
   ];
 
