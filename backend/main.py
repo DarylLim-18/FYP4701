@@ -407,8 +407,8 @@ async def upload_file(file: UploadFile = File(...)):
         print("Error uploading file:", str(e))  # LOG TO TERMINAL
         raise HTTPException(status_code=500, detail=str(e))
     
-@app.get("/files/{file_id}/rows", response_model=List[Dict[str, str]])
-def get_csv_data(file_id: int):
+@app.get("/files/{file_id}/table")
+def get_csv_table(file_id: int):
     try:
         conn = get_db_connection()
         cur = conn.cursor()
@@ -420,9 +420,16 @@ def get_csv_data(file_id: int):
 
         file_data = result[0]
         csv_content = file_data.tobytes().decode("utf-8")
-        reader = csv.DictReader(io.StringIO(csv_content))  # gives list of dicts
-        rows = list(reader)
-        return rows
+        reader = csv.reader(io.StringIO(csv_content))
+        all_rows = list(reader)
+
+        if not all_rows:
+            return {"columns": [], "rows": []}
+
+        header = all_rows[0]
+        data = all_rows[1:]
+
+        return {"columns": header, "rows": data}
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
