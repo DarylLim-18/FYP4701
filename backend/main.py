@@ -16,7 +16,7 @@ import csv
 import io
 
 # Import Machine Learning functions
-from backend.linear_regression import run_linear_regressions
+from backend.linear_regression import run_linear_regression
 from backend.random_forest import run_rf_model
 
 app = FastAPI()
@@ -356,7 +356,7 @@ def run_linear_regressions(target_variable: str = Query(..., description="Target
     file_id: int = Query(..., description="ID of the uploaded CSV file")):
     try:
         data = retrieve_csv_table(file_id)
-        res = run_linear_regressions(
+        res = run_linear_regression(
             data=data,
             target_variable=target_variable,
             feature_variables=feature_variables

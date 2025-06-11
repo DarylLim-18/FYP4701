@@ -60,7 +60,7 @@
 //   return (
 //     <div className="p-6 max-w-6xl mx-auto">
 //       <h1 className="text-2xl font-bold mb-6">Machine Learning Configuration</h1>
-      
+
 //       {/* Dataset Selection */}
 //       <div className="bg-white p-4 rounded-lg shadow mb-6">
 //         <h2 className="text-lg font-semibold mb-3">1. Select Dataset</h2>
@@ -88,7 +88,7 @@
 //       {selectedDataset && (
 //         <div className="bg-white p-4 rounded-lg shadow mb-6">
 //           <h2 className="text-lg font-semibold mb-3">2. Configure Columns</h2>
-          
+
 //           <div className="mb-4">
 //             <h3 className="font-medium mb-2">Available Features</h3>
 //             <div className="flex flex-wrap gap-2">
@@ -209,19 +209,40 @@ export default function MLPage() {
     );
   };
 
-  const handleTrainModel = () => {
+  const handleTrainModel = async () => {
+    if (!selectedAlgorithm || selectedAlgorithm.name !== 'Linear Regression') {
+      alert('Only Linear Regression is implemented for now.');
+      return;
+    }
+
     setIsTraining(true);
-    setTimeout(() => {
-      alert(`Model training complete!\nFeatures: ${selectedFeatures.join(', ')}\nTarget: ${targetVariable}\nAlgorithm: ${selectedAlgorithm.name}`);
+    try {
+      const queryParams = new URLSearchParams({
+        target_variable: targetVariable,
+        feature_variables: selectedFeatures.join(','),
+        file_id: selectedDataset.id.toString()
+      });
+
+      const response = await fetch(`${BASE_URL}/machine-learning/linear-regression?${queryParams}`);
+      const result = await response.json();
+
+      // Show the result (adjust as needed)
+      alert(`Model training complete!\n ${result}`);
+      console.log(result)
+    } catch (error) {
+      console.error('Training failed:', error);
+      alert('Model training failed. Please check the server.');
+    } finally {
       setIsTraining(false);
-    }, 2000);
+    }
   };
+
+
 
   const mlAlgorithms = [
     { id: 1, name: 'Linear Regression', type: 'regression' },
-    { id: 2, name: 'Random Forest', type: 'classification/regression' },
-    { id: 3, name: 'XGBoost', type: 'classification/regression' },
-    { id: 4, name: 'K-Means Clustering', type: 'clustering' }
+    { id: 2, name: 'Random Forest', type: 'classification' },
+
   ];
 
   return (
@@ -236,11 +257,10 @@ export default function MLPage() {
             <div
               key={dataset.id}
               onClick={() => handleDatasetSelect(dataset.id)}
-              className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                selectedDataset?.id === dataset.id
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-200 hover:bg-gray-50'
-              }`}
+              className={`p-4 border rounded-lg cursor-pointer transition-colors ${selectedDataset?.id === dataset.id
+                ? 'border-blue-500 bg-blue-50'
+                : 'border-gray-200 hover:bg-gray-50'
+                }`}
             >
               <h3 className="font-medium">{dataset.file_name}</h3>
               <p className="text-sm text-gray-500 mt-1">ID: {dataset.id}</p>
@@ -261,11 +281,10 @@ export default function MLPage() {
                 <button
                   key={column}
                   onClick={() => toggleFeatureSelection(column)}
-                  className={`px-3 py-1 rounded-full text-sm ${
-                    selectedFeatures.includes(column)
-                      ? 'bg-blue-100 text-blue-800 border border-blue-300'
-                      : 'bg-gray-100 text-gray-800 border border-gray-200'
-                  }`}
+                  className={`px-3 py-1 rounded-full text-sm ${selectedFeatures.includes(column)
+                    ? 'bg-blue-100 text-blue-800 border border-blue-300'
+                    : 'bg-gray-100 text-gray-800 border border-gray-200'
+                    }`}
                 >
                   {column}
                 </button>
@@ -298,11 +317,10 @@ export default function MLPage() {
               <div
                 key={algorithm.id}
                 onClick={() => setSelectedAlgorithm(algorithm)}
-                className={`p-4 border rounded-lg cursor-pointer ${
-                  selectedAlgorithm?.id === algorithm.id
-                    ? 'border-green-500 bg-green-50'
-                    : 'border-gray-200 hover:bg-gray-50'
-                }`}
+                className={`p-4 border rounded-lg cursor-pointer ${selectedAlgorithm?.id === algorithm.id
+                  ? 'border-green-500 bg-green-50'
+                  : 'border-gray-200 hover:bg-gray-50'
+                  }`}
               >
                 <h3 className="font-medium">{algorithm.name}</h3>
                 <p className="text-sm text-gray-500 mt-1">{algorithm.type}</p>
@@ -318,9 +336,8 @@ export default function MLPage() {
           <button
             onClick={handleTrainModel}
             disabled={isTraining}
-            className={`px-6 py-2 rounded-lg text-white font-medium ${
-              isTraining ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'
-            }`}
+            className={`px-6 py-2 rounded-lg text-white font-medium ${isTraining ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'
+              }`}
           >
             {isTraining ? 'Running Model...' : 'Run Model'}
           </button>
