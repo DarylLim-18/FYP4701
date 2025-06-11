@@ -1,6 +1,6 @@
 'use client'; // Needed for interactive sidebar
 import "./globals.css";
-import Sidebar from './components/Sidebar';
+import Sidebar from './components/Sidebar/Sidebar';
 
 
 export default function RootLayout({ children }) {

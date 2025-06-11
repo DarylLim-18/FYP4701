@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 
 // Dynamically import the Map with SSR disabled
-const Map = dynamic(() => import('./index'), {
+const Map = dynamic(() => import('./Map'), {
   ssr: false
 });
 
