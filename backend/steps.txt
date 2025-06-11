@@ -1,0 +1,13 @@
+1. Upload their CSV (1 or 2)
+2. Display the CSV
+2.5. User can choose multiple csv to process
+3. User chooses the Main Feature
+4. User chooses the Other Features:
+
+If 2.5:
+    4.5: Merge the data based on the features
+
+5. User chooses which Machine learning algorithm to User
+6. Display results.
+
+
