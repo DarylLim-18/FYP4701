@@ -290,7 +290,7 @@ export default function MLPage() {
                   key={column}
                   onClick={() => toggleFeatureSelection(column)}
                   className={`px-3 py-1 rounded-full text-sm ${selectedFeatures.includes(column)
-                    ? 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-red-800 dark:text-blue-100 dark:border-red-500'
+                    ? 'bg-red-100 text-gray-800 border-blue-300 dark:bg-red-800 dark:text-blue-100 dark:border-red-500'
                     : 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600'
                     }`}
                 >
