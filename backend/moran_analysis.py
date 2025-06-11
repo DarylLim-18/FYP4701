@@ -1,4 +1,5 @@
 # moran_analysis.py
+from fastapi import HTTPException
 import geopandas as gpd
 from libpysal.weights import Queen
 from esda.moran import Moran, Moran_Local
