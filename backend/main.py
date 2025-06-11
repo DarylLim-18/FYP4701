@@ -445,7 +445,6 @@ async def list_files():
         return [{"id": f[0], "file_name": f[1]} for f in files]
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-=======
     
 @app.get("/files/{file_id}/data")
 def get_csv_data(file_id: int):
