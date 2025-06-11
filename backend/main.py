@@ -352,14 +352,15 @@ def get_csv_headers(file_id: int):
 
 @app.get("/machine-learning/linear-regression")
 def run_linear_regressions(target_variable: str = Query(..., description="Target variable for regression"),
-    feature_variables: list = Query(..., description="Comma-separated list of feature variables"),
+    feature_variables: list = Query(..., description="List of feature variables"),
     file_id: int = Query(..., description="ID of the uploaded CSV file")):
     try:
+        print(f"Running linear regression with target: {target_variable}, features: {feature_variables}, file_id: {file_id}")
         data = retrieve_csv_table(file_id)
         res = run_linear_regression(
             data=data,
-            target_variable=target_variable,
-            feature_variables=feature_variables
+            feature_cols=feature_variables,
+            target_col=target_variable
         )   
         return res
     

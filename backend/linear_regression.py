@@ -86,8 +86,8 @@ def merge_data(asthma_df, gas_agg, ozone_agg):
     return merged.drop(columns=['Year_x', 'Year_y'])
 
 
-def run_linear_regression(data, feature_cols, target_col='CURRENT PREVALENCE'):
-    data = data.dropna(subset=feature_cols + [target_col], inplace=True)
+def run_linear_regression(data, feature_cols, target_col):
+    data.dropna(subset=feature_cols + [target_col], inplace=True)
     X = data[feature_cols]
     y = data[target_col]
 

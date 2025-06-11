@@ -57,7 +57,7 @@ def merge_data(asthma_df, gas_agg, ozone_agg):
     return merged.drop(columns=['Year_x', 'Year_y'])
 
 def run_rf_model(data, feature_cols, target_col='CURRENT_PREVALENCE'):
-    data.dropna(subset=feature_cols + [target_col], inplace=True)
+    data.dropna(subset=feature_cols + [target_col])
     X = data[feature_cols]
     y = data[target_col]
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)

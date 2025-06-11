@@ -218,12 +218,18 @@ export default function MLPage() {
     setIsTraining(true);
     try {
       const queryParams = new URLSearchParams({
-        target_variable: targetVariable,
-        feature_variables: selectedFeatures.join(','),
+        target_variable: targetVariable.toString(),
         file_id: selectedDataset.id.toString()
       });
 
-      const response = await fetch(`${BASE_URL}/machine-learning/linear-regression?${queryParams}`);
+      selectedFeatures.forEach(feature => {
+      queryParams.append("feature_variables", feature);
+      });
+
+    const response = await fetch(`http://localhost:8000/machine-learning/linear-regression?${queryParams.toString()}`, {
+      method: 'GET',
+    });
+
       const result = await response.json();
 
       // Show the result (adjust as needed)
