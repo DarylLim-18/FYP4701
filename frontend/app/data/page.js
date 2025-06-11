@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import DataUpload from '../components/DataUpload/DataUpload';
+import DatasetTable from '../components/DatasetTable/DatasetTable';
 
 export default function DataPage() {
     const [refreshKey, setRefreshKey] = useState(0);
@@ -21,6 +22,7 @@ export default function DataPage() {
             <div className="p-3"></div>
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6">        
                 <DataUpload onUploadSuccess={handleUploadSuccess}/>
+                <DatasetTable/>
             </div>
         </main>
     );
