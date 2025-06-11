@@ -56,9 +56,10 @@ def merge_data(asthma_df, gas_agg, ozone_agg):
     merged = merged.merge(ozone_agg, left_on=['COUNTY', 'YEAR'], right_on=['COUNTY', 'Year'], how='inner')
     return merged.drop(columns=['Year_x', 'Year_y'])
 
-def run_rf_model(data, user_features):
-    X = data[user_features]
-    y = data['CURRENT PREVALENCE']
+def run_rf_model(data, feature_cols, target_col='CURRENT_PREVALENCE'):
+    data.dropna(subset=feature_cols + [target_col], inplace=True)
+    X = data[feature_cols]
+    y = data[target_col]
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     model = RandomForestRegressor(random_state=42)
     model.fit(X_train, y_train)
@@ -106,7 +107,7 @@ def run_rf_model(data, user_features):
     # Feature importance
     importances = model.feature_importances_
     plt.figure(figsize=(8, 6), num = 'Random Forest Feature Importance')
-    plt.barh(user_features, importances)
+    plt.barh(feature_cols, importances)
     plt.xlabel("Feature Importance")
     plt.title("Random Forest Feature Importance")
     plt.tight_layout()
@@ -122,7 +123,7 @@ def main():
     merged = merge_data(asthma_clean, gas_agg, ozone_agg)
     gas_vars.append('Ozone')
     merged = merged.drop(columns=['COMMENT', 'COUNTIES GROUPED'])
-    user_features = ['SO2', 'Ozone', 'NO3', 'SO4', 'NH4']
+    feature_cols = ['SO2', 'Ozone', 'NO3', 'SO4', 'NH4']
     run_rf_model(merged, gas_vars)
 
 if __name__ == "__main__":

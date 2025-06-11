@@ -445,7 +445,7 @@ async def list_files():
         return [{"id": f[0], "file_name": f[1]} for f in files]
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-=======
+
     
 @app.get("/files/{file_id}/data")
 def get_csv_data(file_id: int):
@@ -460,9 +460,6 @@ def get_csv_data(file_id: int):
 
         file_data = result[0]
         csv_content = file_data.tobytes().decode("utf-8")
-        reader = pd.read_csv(io.StringIO(csv_content), encoding='latin1')
-        print(type(reader))
-        print(type(asthma_df))
         all_rows = list(reader)
 
         if not all_rows:
@@ -494,14 +491,13 @@ def retrieve_csv_table(file_id: int):
         file_data = result[0]
         csv_content = file_data.tobytes().decode("utf-8")
         reader = pd.read_csv(io.StringIO(csv_content), encoding='latin1')
-        print(type(reader))
-        print(type(asthma_df))
-        all_rows = list(reader)
-
-        return all_rows
+        
+        return reader
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         if 'cur' in locals(): cur.close()
         if 'conn' in locals(): conn.close()
+        
+

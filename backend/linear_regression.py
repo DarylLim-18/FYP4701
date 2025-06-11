@@ -80,8 +80,6 @@ def preprocess_ozone(ozone_df):
     # Group and return
     return ozone_df.groupby(['COUNTY', 'Year'])[['Ozone']].mean().reset_index()
 
-
-
 def merge_data(asthma_df, gas_agg, ozone_agg):
     merged = asthma_df.merge(gas_agg, left_on=['COUNTY', 'YEAR'], right_on=['COUNTY', 'Year'], how='inner')
     merged = merged.merge(ozone_agg, left_on=['COUNTY', 'YEAR'], right_on=['COUNTY', 'Year'], how='inner')
@@ -89,7 +87,7 @@ def merge_data(asthma_df, gas_agg, ozone_agg):
 
 
 def run_linear_regression(data, feature_cols, target_col='CURRENT PREVALENCE'):
-    data = data.dropna(subset=feature_cols + [target_col])
+    data = data.dropna(subset=feature_cols + [target_col], inplace=True)
     X = data[feature_cols]
     y = data[target_col]
 
