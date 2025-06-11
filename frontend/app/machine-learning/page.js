@@ -266,12 +266,12 @@ export default function MLPage() {
               key={dataset.id}
               onClick={() => handleDatasetSelect(dataset.id)}
               className={`p-4 border rounded-lg cursor-pointer transition-colors ${selectedDataset?.id === dataset.id
-                ? 'border-blue-500 bg-blue-50'
-                : 'border-gray-200 hover:bg-gray-50'
+                ? 'border-black-500 bg-blue-50 dark:bg-blue-500'
+                : 'border-gray-200 dark:border-black-700 hover:bg-gray-200 dark:hover:bg-blue-800'
                 }`}
             >
               <h3 className="font-medium">{dataset.file_name}</h3>
-              <p className="text-sm text-gray-500 mt-1">ID: {dataset.id}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">ID: {dataset.id}</p>
             </div>
           ))}
         </div>
@@ -307,9 +307,10 @@ export default function MLPage() {
               onChange={(e) => setTargetVariable(e.target.value)}
               className="w-full p-2 border border-gray-300 rounded"
             >
-              <option value="">Select target column</option>
+              {/* <option className="dark:bg-gray-800 dark:text-gray-200" value="">SELECT TARGET COLUMN</option> */}
               {selectedDataset.columns.map(column => (
-                <option key={column} value={column}>{column}</option>
+                <option className="dark:bg-gray-600 dark:text-gray-200" key={column} value={column}>{column}</option>
+
               ))}
             </select>
           </div>
@@ -326,12 +327,12 @@ export default function MLPage() {
                 key={algorithm.id}
                 onClick={() => setSelectedAlgorithm(algorithm)}
                 className={`p-4 border rounded-lg cursor-pointer ${selectedAlgorithm?.id === algorithm.id
-                  ? 'border-green-500 bg-green-50'
-                  : 'border-gray-200 hover:bg-gray-50'
+                  ? 'border-black-500 bg-green-50 dark:bg-green-500'
+                  : 'border-gray-200 dark:border-black-700 hover:bg-gray-200 dark:hover:bg-green-800'
                   }`}
               >
                 <h3 className="font-medium">{algorithm.name}</h3>
-                <p className="text-sm text-gray-500 mt-1">{algorithm.type}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{algorithm.type}</p>
               </div>
             ))}
           </div>
@@ -351,6 +352,12 @@ export default function MLPage() {
           </button>
         </div>
       )}
+
+      <div className="">
+        
+      </div>
     </div>
+
+
   );
 }
