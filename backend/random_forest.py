@@ -113,9 +113,14 @@ def run_rf_model(data, feature_cols, target_col='CURRENT_PREVALENCE'):
     plt.tight_layout()
     plt.show()
     
-    # return(model, data)
+    res = {
+        "Features Used": feature_cols,
+        "Mean Squared Error": mse,
+        "R² score": r2,
+        "Worst Residuals": residual_df.reindex(residuals.abs().sort_values(ascending=False).index).head() 
+    }
 
-    return True
+    return res
 
 
 def main():
