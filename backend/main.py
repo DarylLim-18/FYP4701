@@ -15,6 +15,10 @@ import numpy as np
 import csv
 import io
 
+# Import Machine Learning functions
+from backend.linear_regression import run_linear_regressions
+from backend.random_forest import run_rf_model
+
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
@@ -297,28 +301,28 @@ async def list_files():
 #         if 'conn' in locals(): conn.close()
 
 
-# @app.get("/files/{file_id}")
-# def retrieve_csv_table(file_id: int):
-#     try:
-#         conn = get_db_connection()
-#         cur = conn.cursor()
-#         cur.execute("SELECT file_data FROM files WHERE file_id = %s", (file_id,))
-#         result = cur.fetchone()
+@app.get("/files/{file_id}")
+def retrieve_csv_table(file_id: int):
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT file_data FROM files WHERE file_id = %s", (file_id,))
+        result = cur.fetchone()
 
-#         if result is None:
-#             raise HTTPException(status_code=404, detail="File not found")
+        if result is None:
+            raise HTTPException(status_code=404, detail="File not found")
 
-#         file_data = result[0]
-#         csv_content = file_data.tobytes().decode("utf-8")
-#         reader = pd.read_csv(io.StringIO(csv_content), encoding='latin1')
+        file_data = result[0]
+        csv_content = file_data.tobytes().decode("utf-8")
+        reader = pd.read_csv(io.StringIO(csv_content), encoding='latin1')
         
-#         return reader
+        return reader
 
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
-#     finally:
-#         if 'cur' in locals(): cur.close()
-#         if 'conn' in locals(): conn.close()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if 'cur' in locals(): cur.close()
+        if 'conn' in locals(): conn.close()
 
 
 @app.get("/files/{file_id}/headers")
@@ -345,4 +349,21 @@ def get_csv_headers(file_id: int):
         if 'cur' in locals(): cur.close()
         if 'conn' in locals(): conn.close()
         
+
+@app.get("/machine-learning/linear-regression")
+def run_linear_regressions(target_variable: str = Query(..., description="Target variable for regression"),
+    feature_variables: list = Query(..., description="Comma-separated list of feature variables"),
+    file_id: int = Query(..., description="ID of the uploaded CSV file")):
+    try:
+        data = retrieve_csv_table(file_id)
+        res = run_linear_regressions(
+            data=data,
+            target_variable=target_variable,
+            feature_variables=feature_variables
+        )   
+        return res
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
 

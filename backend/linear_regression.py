@@ -121,6 +121,7 @@ def run_linear_regression(data, feature_cols, target_col='CURRENT PREVALENCE'):
     plt.tight_layout()
     plt.show()
     
+    return True
 
 def main():
     # Load and preprocess
