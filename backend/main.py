@@ -407,8 +407,8 @@ async def upload_file(file: UploadFile = File(...)):
         print("Error uploading file:", str(e))  # LOG TO TERMINAL
         raise HTTPException(status_code=500, detail=str(e))
     
-@app.get("/files/{file_id}/table")
-def get_csv_table(file_id: int):
+@app.get("/files/{file_id}/data")
+def get_csv_data(file_id: int):
     try:
         conn = get_db_connection()
         cur = conn.cursor()
@@ -420,7 +420,9 @@ def get_csv_table(file_id: int):
 
         file_data = result[0]
         csv_content = file_data.tobytes().decode("utf-8")
-        reader = csv.reader(io.StringIO(csv_content))
+        reader = pd.read_csv(io.StringIO(csv_content), encoding='latin1')
+        print(type(reader))
+        print(type(asthma_df))
         all_rows = list(reader)
 
         if not all_rows:
@@ -430,6 +432,33 @@ def get_csv_table(file_id: int):
         data = all_rows[1:]
 
         return {"columns": header, "rows": data}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if 'cur' in locals(): cur.close()
+        if 'conn' in locals(): conn.close()
+
+
+@app.get("/files/{file_id}")
+def retrieve_csv_table(file_id: int):
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT file_data FROM files WHERE file_id = %s", (file_id,))
+        result = cur.fetchone()
+
+        if result is None:
+            raise HTTPException(status_code=404, detail="File not found")
+
+        file_data = result[0]
+        csv_content = file_data.tobytes().decode("utf-8")
+        reader = pd.read_csv(io.StringIO(csv_content), encoding='latin1')
+        print(type(reader))
+        print(type(asthma_df))
+        all_rows = list(reader)
+
+        return all_rows
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
