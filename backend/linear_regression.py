@@ -121,7 +121,15 @@ def run_linear_regression(data, feature_cols, target_col):
     plt.tight_layout()
     plt.show()
     
-    return True
+    res = {
+        "Features Used": feature_cols,
+        "Mean Squared Error": mse,
+        "R² score": r2,
+        "Coefficients": model.coef_.tolist(),
+        "Intercept": model.intercept_,
+    }
+    
+    return res
 
 def main():
     # Load and preprocess
