@@ -277,6 +277,9 @@ def get_csv_data(file_id: int):
 
         file_data = result[0]
         csv_content = file_data.tobytes().decode("utf-8")
+        reader = pd.read_csv(io.StringIO(csv_content), encoding='latin1')
+        print(type(reader))
+        print(type(asthma_df))
         all_rows = list(reader)
 
         if not all_rows:
