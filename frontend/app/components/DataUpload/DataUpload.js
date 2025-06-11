@@ -29,7 +29,7 @@ export default function UploadModal({ onUploadSuccess }) {
       const formData = new FormData();
       formData.append('file', selectedFile);
 
-      const response = await fetch('/api/upload', {  // Changed to relative path
+      const response = await fetch('/upload', {  // Changed to relative path
         method: 'POST',
         body: formData,
       });
@@ -69,7 +69,7 @@ export default function UploadModal({ onUploadSuccess }) {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Upload Document</h2>
+              <h2 className="text-sm text-gray-500 my-2 text-xl font-bold">Upload Document</h2>
               <button
                 onClick={() => !isUploading && setIsOpen(false)}
                 disabled={isUploading}
@@ -99,7 +99,7 @@ export default function UploadModal({ onUploadSuccess }) {
                 </p>
               ) : (
                 <>
-                  <p>Drag & drop files here</p>
+                  <p className="text-sm text-gray-500 my-2">Drag & drop files here</p>
                   <p className="text-sm text-gray-500 my-2">or</p>
                   <span className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
                     Select File
