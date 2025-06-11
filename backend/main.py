@@ -74,6 +74,13 @@ def compute_morans_i_local(merged: GeoDataFrame, variable: str, year: str):
     merged['local_I'] = moran_local.Is
     merged['p_value'] = moran_local.p_sim
     merged['z_score'] = moran_local.z.tolist()
+    
+    # counties = []
+    # for county in merged['NAME'].tolist():
+    #     if county not in counties:
+    #         counties.append(county)
+    
+    # print(f'Running Local Moran\'s I for {variable} in {year}\nCounties: {counties}\nLocal I values: {moran_local.Is}\nP-values: {moran_local.p_sim}\nZ-scores: {moran_local.z}')
 
     # Classify cluster types
     cluster_labels = []
@@ -92,7 +99,7 @@ def compute_morans_i_local(merged: GeoDataFrame, variable: str, year: str):
         else:
             cluster_labels.append('Not Significant')
 
-
+    
     # Return GeoJSON for frontend display
     return merged.to_json()
 

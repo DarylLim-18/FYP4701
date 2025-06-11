@@ -22,19 +22,25 @@ def remove_empty_rows(df: pd.DataFrame, column: str):
     """
     Removes rows from a DataFrame where the specified column is empty.
     """
-    if column not in df.columns:
-        raise ValueError(f"Column '{column}' not found in DataFrame.")
-    
-    return df.dropna(subset=[column])
+    try:
+        if column not in df.columns:
+            raise ValueError(f"Column '{column}' not found in DataFrame.")
+        
+        return df.dropna(subset=[column])
+    except Exception as e:
+        raise ValueError(f"Error removing empty rows in column '{column}': {e}")
 
 def remove_column(df: pd.DataFrame, column: str):
     """
     Removes a column from a DataFrame.
     """
-    if column not in df.columns:
-        raise ValueError(f"Column '{column}' not found in DataFrame.")
-    
-    return df.drop(columns=[column])
+    try:
+        if column not in df.columns:
+            raise ValueError(f"Column '{column}' not found in DataFrame.")
+        
+        return df.drop(columns=[column], axis=1, errors='coerce')
+    except Exception as e:
+        raise ValueError(f"Error removing column '{column}': {e}")
     
 
 def read_csv(file_path: str):
