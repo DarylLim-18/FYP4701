@@ -256,7 +256,7 @@ export default function MLPage() {
       <h1 className="text-2xl font-bold mb-6">Machine Learning Configuration</h1>
 
       {/* Dataset Selection */}
-      <div className="bg-white p-4 rounded-lg shadow-xl mb-6">
+      <div className="bg-white p-4 dark:bg-gray-800 rounded-lg shadow-xl mb-6">
         <h2 className="text-lg font-semibold mb-3">1. Select Dataset</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {datasets.map(dataset => (
@@ -277,7 +277,7 @@ export default function MLPage() {
 
       {/* Column Selection */}
       {selectedDataset && (
-        <div className="bg-white p-4 rounded-lg shadow-xl mb-6">
+        <div className="bg-white p-4 dark:bg-gray-800 rounded-lg shadow-xl mb-6">
           <h2 className="text-lg font-semibold mb-3">2. Configure Columns</h2>
 
           <div className="mb-4">
@@ -316,7 +316,7 @@ export default function MLPage() {
 
       {/* Algorithm Selection */}
       {selectedDataset && (
-        <div className="bg-white p-4 rounded-lg shadow-xl mb-6">
+        <div className="bg-white p-4 dark:bg-gray-800 rounded-lg shadow-xl mb-6">
           <h2 className="text-lg font-semibold mb-3">3. Select Algorithm</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
             {mlAlgorithms.map(algorithm => (
