@@ -71,28 +71,36 @@ def run_rf_model(data, feature_cols, target_col='CURRENT_PREVALENCE'):
     print(f"R^2 Score: {r2:.2f}")
     data['Predicted Prevalence'] = model.predict(X)
 
-    # Plot actual vs predicted
-    plt.figure(figsize=(8, 6), num ='Random Forest Regression')
-    plt.scatter(y_test, y_pred, alpha=0.6, label="Predictions")
-    plt.plot([y.min(), y.max()], [y.min(), y.max()], 'r--', label="Ideal Fit")
-    plt.xlabel("Actual Prevalence")
-    plt.ylabel("Predicted Prevalence")
-    plt.title("Actual vs Predicted Asthma Prevalence")
-    plt.legend()
-    plt.grid(True)
-    plt.tight_layout()
-    plt.show()
+    # Create a 1x3 grid of subplots
+    fig, axs = plt.subplots(2, 2, figsize=(14, 10))
+    fig.suptitle("Random Forest Regression Analysis", fontsize=16)
 
-    # Plot residuals
+    # Actual vs Predicted plot
+    axs[0, 0].scatter(y_test, y_pred, alpha=0.6, label="Predictions")
+    axs[0, 0].plot([y.min(), y.max()], [y.min(), y.max()], 'r--', label="Ideal Fit")
+    axs[0, 0].set_xlabel("Actual Prevalence")
+    axs[0, 0].set_ylabel("Predicted Prevalence")
+    axs[0, 0].set_title("Actual vs Predicted")
+    axs[0, 0].legend()
+    axs[0, 0].grid(True)
+
+    # Residual plot
     residuals = y_test - y_pred
-    plt.figure(figsize=(8, 6), num='Random Forest Residuals')
-    plt.scatter(y_pred, residuals, alpha=0.6)
-    plt.axhline(0, color='red', linestyle='--')
-    plt.xlabel("Predicted Prevalence")
-    plt.ylabel("Residuals")
-    plt.title("Residual Plot")
-    plt.grid(True)
-    plt.tight_layout()
+    axs[0, 1].scatter(y_pred, residuals, alpha=0.6)
+    axs[0, 1].axhline(0, color='red', linestyle='--')
+    axs[0, 1].set_xlabel("Predicted Prevalence")
+    axs[0, 1].set_ylabel("Residuals")
+    axs[0, 1].set_title("Residual Plot")
+    axs[0, 1].grid(True)
+
+    # Feature Importance plot
+    importances = model.feature_importances_
+    axs[1, 0].barh(feature_cols, importances)
+    axs[1, 0].set_xlabel("Feature Importance")
+    axs[1, 0].set_title("Feature Importance")
+
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+    axs[1, 1].axis('off')
     plt.show()
 
     # Show worst residuals
@@ -103,15 +111,6 @@ def run_rf_model(data, feature_cols, target_col='CURRENT_PREVALENCE'):
     })
     print("\n--- Worst Residuals (Top 5) ---")
     print(residual_df.reindex(residuals.abs().sort_values(ascending=False).index).head())
-
-    # Feature importance
-    importances = model.feature_importances_
-    plt.figure(figsize=(8, 6), num = 'Random Forest Feature Importance')
-    plt.barh(feature_cols, importances)
-    plt.xlabel("Feature Importance")
-    plt.title("Random Forest Feature Importance")
-    plt.tight_layout()
-    plt.show()
     
     res = {
         "Features Used": feature_cols,
@@ -131,8 +130,8 @@ def main():
     merged = merge_data(asthma_clean, gas_agg, ozone_agg)
     gas_vars.append('Ozone')
     merged = merged.drop(columns=['COMMENT', 'COUNTIES GROUPED'])
-    feature_cols = ['SO2', 'Ozone', 'NO3', 'SO4', 'NH4']
-    run_rf_model(merged, gas_vars)
+    feature_cols = ['SO2', 'Ozone', 'SO2 PPB', 'Cl']
+    run_rf_model(merged, feature_cols, target_col='CURRENT PREVALENCE')
 
 if __name__ == "__main__":
     main()
