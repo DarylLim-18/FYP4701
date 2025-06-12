@@ -144,7 +144,7 @@ def main():
     # --- User defines features here ---
     user_features = ['SO2', 'Ozone', 'NO3', 'SO4']  # Default features
     
-    run_linear_regression(merged, gas_vars)
+    run_linear_regression(merged, user_features, 'CURRENT PREVALENCE')
     
 
 
