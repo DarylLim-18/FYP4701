@@ -1,172 +1,114 @@
-// export default function DataPage() {
-//     return (
-//       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6">
-//         <h1 className="text-2xl font-bold">Machine Learning</h1>
-//         <p>Soon to implement Machine Learning!</p>
-//       </div>
-//     );
-//   }
-
-// 'use client';
-// import { useState } from 'react';
-
-// export default function MLPage() {
-//   // Mock datasets - replace with real data later
-//   const mockDatasets = [
-//     { id: 1, name: 'asthma_data.csv', columns: ['age', 'gender', 'no2_level', 'so2_level', 'asthma_severity', 'location'] },
-//     { id: 2, name: 'air_quality.xlsx', columns: ['pm25', 'pm10', 'temperature', 'humidity', 'health_index'] }
-//   ];
-
-//   // Mock ML algorithms
-//   const mlAlgorithms = [
-//     { id: 1, name: 'Linear Regression', type: 'regression' },
-//     { id: 2, name: 'Random Forest', type: 'classification/regression' },
-//     { id: 3, name: 'XGBoost', type: 'classification/regression' },
-//     { id: 4, name: 'K-Means Clustering', type: 'clustering' }
-//   ];
-
-//   // State management
-//   const [selectedDataset, setSelectedDataset] = useState(null);
-//   const [selectedFeatures, setSelectedFeatures] = useState([]);
-//   const [targetVariable, setTargetVariable] = useState('');
-//   const [selectedAlgorithm, setSelectedAlgorithm] = useState(null);
-//   const [isTraining, setIsTraining] = useState(false);
-
-//   // Handlers
-//   const handleDatasetSelect = (datasetId) => {
-//     const dataset = mockDatasets.find(ds => ds.id === datasetId);
-//     setSelectedDataset(dataset);
-//     setSelectedFeatures([]);
-//     setTargetVariable('');
-//   };
-
-//   const toggleFeatureSelection = (column) => {
-//     setSelectedFeatures(prev => 
-//       prev.includes(column) 
-//         ? prev.filter(f => f !== column) 
-//         : [...prev, column]
-//     );
-//   };
-
-//   const handleTrainModel = () => {
-//     setIsTraining(true);
-//     // Mock training process
-//     setTimeout(() => {
-//       alert(`Model training complete!\nFeatures: ${selectedFeatures.join(', ')}\nTarget: ${targetVariable}\nAlgorithm: ${selectedAlgorithm.name}`);
-//       setIsTraining(false);
-//     }, 2000);
-//   };
-
-//   return (
-//     <div className="p-6 max-w-6xl mx-auto">
-//       <h1 className="text-2xl font-bold mb-6">Machine Learning Configuration</h1>
-
-//       {/* Dataset Selection */}
-//       <div className="bg-white p-4 rounded-lg shadow mb-6">
-//         <h2 className="text-lg font-semibold mb-3">1. Select Dataset</h2>
-//         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-//           {mockDatasets.map(dataset => (
-//             <div 
-//               key={dataset.id}
-//               onClick={() => handleDatasetSelect(dataset.id)}
-//               className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-//                 selectedDataset?.id === dataset.id 
-//                   ? 'border-blue-500 bg-blue-50' 
-//                   : 'border-gray-200 hover:bg-gray-50'
-//               }`}
-//             >
-//               <h3 className="font-medium">{dataset.name}</h3>
-//               <p className="text-sm text-gray-500 mt-1">
-//                 {dataset.columns.length} columns
-//               </p>
-//             </div>
-//           ))}
-//         </div>
-//       </div>
-
-//       {/* Column Selection */}
-//       {selectedDataset && (
-//         <div className="bg-white p-4 rounded-lg shadow mb-6">
-//           <h2 className="text-lg font-semibold mb-3">2. Configure Columns</h2>
-
-//           <div className="mb-4">
-//             <h3 className="font-medium mb-2">Available Features</h3>
-//             <div className="flex flex-wrap gap-2">
-//               {selectedDataset.columns.map(column => (
-//                 <button
-//                   key={column}
-//                   onClick={() => toggleFeatureSelection(column)}
-//                   className={`px-3 py-1 rounded-full text-sm ${
-//                     selectedFeatures.includes(column)
-//                       ? 'bg-blue-100 text-blue-800 border border-blue-300'
-//                       : 'bg-gray-100 text-gray-800 border border-gray-200'
-//                   }`}
-//                 >
-//                   {column}
-//                 </button>
-//               ))}
-//             </div>
-//           </div>
-
-//           <div className="mt-4">
-//             <label className="block font-medium mb-2">Target Variable</label>
-//             <select
-//               value={targetVariable}
-//               onChange={(e) => setTargetVariable(e.target.value)}
-//               className="w-full p-2 border border-gray-300 rounded"
-//             >
-//               <option value="">Select target column</option>
-//               {selectedDataset.columns.map(column => (
-//                 <option key={column} value={column}>{column}</option>
-//               ))}
-//             </select>
-//           </div>
-//         </div>
-//       )}
-
-//       {/* Algorithm Selection */}
-//       {selectedDataset && (
-//         <div className="bg-white p-4 rounded-lg shadow mb-6">
-//           <h2 className="text-lg font-semibold mb-3">3. Select Algorithm</h2>
-//           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-//             {mlAlgorithms.map(algorithm => (
-//               <div
-//                 key={algorithm.id}
-//                 onClick={() => setSelectedAlgorithm(algorithm)}
-//                 className={`p-4 border rounded-lg cursor-pointer ${
-//                   selectedAlgorithm?.id === algorithm.id
-//                     ? 'border-green-500 bg-green-50'
-//                     : 'border-gray-200 hover:bg-gray-50'
-//                 }`}
-//               >
-//                 <h3 className="font-medium">{algorithm.name}</h3>
-//                 <p className="text-sm text-gray-500 mt-1">{algorithm.type}</p>
-//               </div>
-//             ))}
-//           </div>
-//         </div>
-//       )}
-
-//       {/* Action Button */}
-//       {selectedDataset && selectedFeatures.length > 0 && targetVariable && selectedAlgorithm && (
-//         <div className="flex justify-center">
-//           <button
-//             onClick={handleTrainModel}
-//             disabled={isTraining}
-//             className={`px-6 py-2 rounded-lg text-white font-medium ${
-//               isTraining ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'
-//             }`}
-//           >
-//             {isTraining ? 'Training Model...' : 'Train Model'}
-//           </button>
-//         </div>
-//       )}
-//     </div>
-//   );
-// }
-
 'use client';
 import { useState, useEffect } from 'react';
+
+function ModelResultsCard({ results, algorithmName }) {
+  if (!results || typeof results !== 'object') return null;
+
+  // Helper function to safely format numbers and handle objects
+  function formatValue(value) {
+    if (typeof value === 'number') {
+      return value.toFixed(4);
+    }
+    if (typeof value === 'object' && value !== null) {
+      return JSON.stringify(value); // Convert objects to string for display
+    }
+    return value;
+  }
+
+  // Safely get features used (handle cases where it might not be an array)
+  const featuresUsed = Array.isArray(results["Features Used"]) 
+    ? results["Features Used"] 
+    : [];
+
+  // Convert Worst Residuals to array format if it exists
+  const worstResiduals = results["Worst Residuals"] && typeof results["Worst Residuals"] === 'object'
+    ? Object.entries(results["Worst Residuals"]).map(([index, value]) => ({
+        index,
+        value: formatValue(value)
+      }))
+    : null;
+
+  return (
+    <div className="py-4 bg-white p-4 dark:bg-gray-800 rounded-lg shadow-xl mb-6">
+      <h2 className="text-lg font-semibold mb-3">Model Results: {algorithmName}</h2>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-4">
+          <div>
+            <h3 className="font-medium text-gray-700 dark:text-gray-300">Features Used</h3>
+            <div className="flex flex-wrap gap-2 mt-1">
+              {featuresUsed.map((feature, index) => (
+                <span key={index} className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-xs">
+                  {feature}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h3 className="font-medium text-gray-700 dark:text-gray-300">Metrics</h3>
+            <div className="mt-2 space-y-2">
+              <div className="flex justify-between">
+                <span>Mean Squared Error:</span>
+                <span className="font-mono">{formatValue(results["Mean Squared Error"])}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>R² Score:</span>
+                <span className="font-mono">{formatValue(results["R² score"])}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          {results["Coefficients"] && Array.isArray(results["Coefficients"]) && (
+            <div>
+              <h3 className="font-medium text-gray-700 dark:text-gray-300">Coefficients</h3>
+              <div className="mt-2 space-y-1">
+                {results["Coefficients"].map((coef, index) => (
+                  <div key={index} className="flex justify-between">
+                    <span>{featuresUsed[index] || `Feature ${index}`}:</span>
+                    <span className="font-mono">{formatValue(coef)}</span>
+                  </div>
+                ))}
+              </div>
+              {results["Intercept"] !== undefined && (
+                <div className="mt-2 flex justify-between">
+                  <span>Intercept:</span>
+                  <span className="font-mono">{formatValue(results["Intercept"])}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {worstResiduals && (
+            <div className="mt-4">
+              <h3 className="font-medium text-gray-700 dark:text-gray-300">Top 5 Worst Residuals</h3>
+              <div className="mt-2 overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                      <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Index</th>
+                      <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Residual</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    {worstResiduals.map(({index, value}) => (
+                      <tr key={index}>
+                        <td className="px-2 py-1 whitespace-nowrap text-sm">{index}</td>
+                        <td className="px-2 py-1 whitespace-nowrap text-sm font-mono">{value}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function MLPage() {
   const [datasets, setDatasets] = useState([]);
@@ -175,6 +117,7 @@ export default function MLPage() {
   const [targetVariable, setTargetVariable] = useState('');
   const [selectedAlgorithm, setSelectedAlgorithm] = useState(null);
   const [isTraining, setIsTraining] = useState(false);
+  const [modelResult, setModelResult] = useState(null);
 
   // Update this to match your FastAPI backend
   const BASE_URL = 'http://localhost:8000';
@@ -210,14 +153,9 @@ export default function MLPage() {
   };
 
   const handleTrainModel = async () => {
-    // if (!selectedAlgorithm || selectedAlgorithm.name !== 'Linear Regression') {
-    //   alert('Only Linear Regression is implemented for now.');
-    //   return;
-    // }
-
     const api = selectedAlgorithm.api;
-
     setIsTraining(true);
+
     try {
       const queryParams = new URLSearchParams({
         target_variable: targetVariable.toString(),
@@ -225,18 +163,20 @@ export default function MLPage() {
       });
 
       selectedFeatures.forEach(feature => {
-      queryParams.append("feature_variables", feature);
+        queryParams.append("feature_variables", feature);
       });
 
-    const response = await fetch(`http://localhost:8000/machine-learning/${api}?${queryParams.toString()}`, {
-      method: 'GET',
-    });
+      const response = await fetch(`http://localhost:8000/machine-learning/${api}?${queryParams.toString()}`, {
+        method: 'GET',
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
 
       const result = await response.json();
+      setModelResult(result); // This is crucial for displaying results
 
-      // Show the result (adjust as needed)
-      alert(`Model training complete!\n ${result}`);
-      console.log(result)
     } catch (error) {
       console.error('Training failed:', error);
       alert('Model training failed. Please check the server.');
@@ -248,7 +188,7 @@ export default function MLPage() {
 
 
   const mlAlgorithms = [
-    { id: 1, name: 'Linear Regression', type: 'regression' , api: 'linear-regression' },
+    { id: 1, name: 'Linear Regression', type: 'regression', api: 'linear-regression' },
     { id: 2, name: 'Random Forest', type: 'classification', api: 'random-forest' },
 
   ];
@@ -341,7 +281,7 @@ export default function MLPage() {
 
       {/* Action Button */}
       {selectedDataset && selectedFeatures.length > 0 && targetVariable && selectedAlgorithm && (
-        <div className="flex justify-center">
+        <div className="flex justify-center mb-6">
           <button
             onClick={handleTrainModel}
             disabled={isTraining}
@@ -352,12 +292,14 @@ export default function MLPage() {
           </button>
         </div>
       )}
-
-      <div className="">
-        
-      </div>
+      
+      {/* Results Display */}
+      {modelResult && selectedAlgorithm && (
+        <ModelResultsCard
+          results={modelResult}
+          algorithmName={selectedAlgorithm.name}
+        />
+      )}
     </div>
-
-
   );
 }
