@@ -1,12 +1,8 @@
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import mean_squared_error, r2_score
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
 import matplotlib.pyplot as plt
-
+from sklearn.linear_model import LogisticRegression
 
 
 def load_data():
@@ -86,50 +82,90 @@ def merge_data(asthma_df, gas_agg, ozone_agg):
     return merged.drop(columns=['Year_x', 'Year_y'])
 
 
-def run_linear_regression(data, feature_cols, target_col):
-    data.dropna(subset=feature_cols + [target_col], inplace=True)
+def run_logistic_regression(data, feature_cols, target_col='CURRENT PREVALENCE', threshold=None):
+    data = data.dropna(subset=feature_cols + [target_col]).copy()
+
+    if threshold is None:
+        threshold = data[target_col].median()
+
+    data['PREVALENCE_CLASS'] = (data[target_col] > threshold).astype(int)
+    
     X = data[feature_cols]
-    y = data[target_col]
+    y = data['PREVALENCE_CLASS']
 
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
 
+    from sklearn.model_selection import train_test_split
     X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
-    model = LinearRegression()
+
+    model = LogisticRegression()
     model.fit(X_train, y_train)
 
     y_pred = model.predict(X_test)
-    mse = mean_squared_error(y_test, y_pred)
-    r2 = r2_score(y_test, y_pred)
 
-    print("\n--- Linear Regression Results ---")
+    acc = accuracy_score(y_test, y_pred)
+    cm = confusion_matrix(y_test, y_pred)
+    report = classification_report(y_test, y_pred)
+
+    print("\n--- Logistic Regression Classification Results ---")
     print(f"Features Used: {feature_cols}")
-    print(f"Mean Squared Error: {mse}") # Averaged squared difference between predicted and actual values (Lower is better)
-    print(f"R² score: {r2}") # Proportion of variance explained by the model (1 is perfect fit)
-    print("Coefficients:", model.coef_) # Represents the expected change in the target for one unit increase of the feature
-    print("Intercept:", model.intercept_) # Predicted value of asthma prevalence when all features are 0
-    print("\nSample of merged data:\n", data.head())
-    
-    plt.figure(figsize=(8, 6), num='Linear Regression')
-    plt.scatter(y_test, y_pred, alpha=0.6, label="Predictions")
-    plt.plot([y.min(), y.max()], [y.min(), y.max()], 'r--', label="Ideal Fit")
-    plt.xlabel("Actual Prevalence")
-    plt.ylabel("Predicted Prevalence")
-    plt.title("Actual vs Predicted Asthma Prevalence")
-    plt.legend()
-    plt.grid(True)
-    plt.tight_layout()
+    print(f"Threshold for classification: {threshold:.2f}")
+    print(f"Accuracy: {acc:.2f}")
+    print("\nConfusion Matrix:\n", cm)
+    print("\nClassification Report:\n", report)
+
+    # Set up 2x2 grid for logistic regression visualization
+    fig, axs = plt.subplots(2, 2, figsize=(14, 10))
+    fig.suptitle("Logistic Regression Analysis", fontsize=16)
+
+    # --- Confusion Matrix ---
+    axs[0, 0].imshow(cm, cmap="Blues")
+    axs[0, 0].set_title("Confusion Matrix")
+    axs[0, 0].set_xticks([0, 1])
+    axs[0, 0].set_yticks([0, 1])
+    axs[0, 0].set_xticklabels(['Low', 'High'])
+    axs[0, 0].set_yticklabels(['Low', 'High'])
+    axs[0, 0].set_xlabel("Predicted")
+    axs[0, 0].set_ylabel("Actual")
+    for i in range(2):
+        for j in range(2):
+            axs[0, 0].text(j, i, cm[i, j], ha='center', va='center', color='black')
+
+    # --- Actual vs Predicted Classes Line Plot ---
+    axs[0, 1].plot(list(range(len(y_test))), y_test.values, label='Actual', marker='o')
+    axs[0, 1].plot(list(range(len(y_pred))), y_pred, label='Predicted', marker='x')
+    axs[0, 1].set_title("Actual vs Predicted Classes")
+    axs[0, 1].set_xlabel("Sample Index")
+    axs[0, 1].set_ylabel("Class (0 = Low, 1 = High)")
+    axs[0, 1].legend()
+    axs[0, 1].grid(True)
+
+    # --- Predicted Probabilities Line Plot ---
+    y_proba = model.predict_proba(X_test)[:, 1]
+    axs[1, 0].plot(list(range(len(y_proba))), y_proba, label='Predicted Probability', marker='.')
+    axs[1, 0].axhline(0.5, color='red', linestyle='--', label='Threshold = 0.5')
+    axs[1, 0].set_title("Predicted Probability of High Prevalence")
+    axs[1, 0].set_xlabel("Sample Index")
+    axs[1, 0].set_ylabel("Probability (Class 1)")
+    axs[1, 0].legend()
+    axs[1, 0].grid(True)
+
+    # --- Leave last subplot blank (or use for notes/legend) ---
+    axs[1, 1].axis('off')
+
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     plt.show()
-    
-    res = {
+
+
+    return {
         "Features Used": feature_cols,
-        "Mean Squared Error": mse,
-        "R² score": r2,
+        "Threshold": threshold,
+        "Accuracy": acc,
+        "Classification Report": report,
         "Coefficients": model.coef_.tolist(),
-        "Intercept": model.intercept_,
+        "Intercept": model.intercept_.tolist(),
     }
-    
-    return res
 
 def main():
     # Load and preprocess
@@ -144,8 +180,7 @@ def main():
     # --- User defines features here ---
     user_features = ['SO2', 'Ozone', 'NO3', 'SO4']  # Default features
     
-    run_linear_regression(merged, user_features, 'CURRENT PREVALENCE')
-    
+    run_logistic_regression(merged, user_features, target_col='CURRENT PREVALENCE')    
 
 
 if __name__ == "__main__":

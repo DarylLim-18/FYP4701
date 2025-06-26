@@ -1,10 +1,11 @@
 'use client';
 import { useState } from 'react';
-import Upload from '../components/DataUpload/DataUpload';
+import DataUpload from '../components/DataUpload/DataUpload';
+import DatasetTable from '../components/DatasetTable/DatasetTable';
 
 export default function DataPage() {
     const [refreshKey, setRefreshKey] = useState(0);
-    const handleFileUpload = (file) => {
+    const handleUploadSuccess = (file) => {
         console.log('File ready for processing:', file.name);
         // Add your file processing logic here
         setRefreshKey(prev => prev + 1); // Triggers DocumentList refresh
@@ -20,7 +21,8 @@ export default function DataPage() {
             </div>
             <div className="p-3"></div>
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6">        
-                <Upload onFileUpload={handleFileUpload}/>
+                <DataUpload onUploadSuccess={handleUploadSuccess}/>
+                <DatasetTable/>
             </div>
         </main>
     );
