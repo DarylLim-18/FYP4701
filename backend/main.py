@@ -15,6 +15,10 @@ import numpy as np
 import csv
 import io
 
+# Import Machine Learning functions
+from backend.linear_regression import run_linear_regression
+from backend.random_forest import run_rf_model
+
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
@@ -264,34 +268,37 @@ async def list_files():
         raise HTTPException(status_code=500, detail=str(e))
 
     
-@app.get("/files/{file_id}/data")
-def get_csv_data(file_id: int):
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("SELECT file_data FROM files WHERE file_id = %s", (file_id,))
-        result = cur.fetchone()
+# @app.get("/files/{file_id}/data")
+# def get_csv_data(file_id: int):
+#     try:
+#         conn = get_db_connection()
+#         cur = conn.cursor()
+#         cur.execute("SELECT file_data FROM files WHERE file_id = %s", (file_id,))
+#         result = cur.fetchone()
 
-        if result is None:
-            raise HTTPException(status_code=404, detail="File not found")
+#         if result is None:
+#             raise HTTPException(status_code=404, detail="File not found")
 
-        file_data = result[0]
-        csv_content = file_data.tobytes().decode("utf-8")
-        all_rows = list(reader)
+#         file_data = result[0]
+#         csv_content = file_data.tobytes().decode("utf-8")
+#         reader = pd.read_csv(io.StringIO(csv_content), encoding='latin1')
+#         print(type(reader))
+#         print(type(asthma_df))
+#         all_rows = list(reader)
 
-        if not all_rows:
-            return {"columns": [], "rows": []}
+#         if not all_rows:
+#             return {"columns": [], "rows": []}
 
-        header = all_rows[0]
-        data = all_rows[1:]
+#         header = all_rows[0]
+#         data = all_rows[1:]
 
-        return {"columns": header, "rows": data}
+#         return {"columns": header, "rows": data}
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        if 'cur' in locals(): cur.close()
-        if 'conn' in locals(): conn.close()
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
+#     finally:
+#         if 'cur' in locals(): cur.close()
+#         if 'conn' in locals(): conn.close()
 
 
 @app.get("/files/{file_id}")
@@ -316,5 +323,65 @@ def retrieve_csv_table(file_id: int):
     finally:
         if 'cur' in locals(): cur.close()
         if 'conn' in locals(): conn.close()
+
+
+@app.get("/files/{file_id}/headers")
+def get_csv_headers(file_id: int):
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT file_data FROM files WHERE file_id = %s", (file_id,))
+        result = cur.fetchone()
+
+        if result is None:
+            raise HTTPException(status_code=404, detail="File not found")
+
+        file_data = result[0]
+        csv_content = file_data.tobytes().decode("utf-8")
+        df = pd.read_csv(io.StringIO(csv_content), nrows=0, encoding='latin1')  # only reads headers
+        headers = list(df.columns)
+
+        return {"columns": headers}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if 'cur' in locals(): cur.close()
+        if 'conn' in locals(): conn.close()
         
 
+@app.get("/machine-learning/linear-regression")
+def run_linear_regressions(target_variable: str = Query(..., description="Target variable for regression"),
+    feature_variables: list = Query(..., description="List of feature variables"),
+    file_id: int = Query(..., description="ID of the uploaded CSV file")):
+    try:
+        print(f"Running linear regression with target: {target_variable}, features: {feature_variables}, file_id: {file_id}")
+        data = retrieve_csv_table(file_id)
+        res = run_linear_regression(
+            data=data,
+            feature_cols=feature_variables,
+            target_col=target_variable
+        )   
+        return res
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+
+@app.get("/machine-learning/random-forest")
+def run_random_forest(target_variable: str = Query(..., description="Target variable for regression"),
+    feature_variables: list = Query(..., description="List of feature variables"),
+    file_id: int = Query(..., description="ID of the uploaded CSV file")):
+    try:
+        print(f"Running linear regression with target: {target_variable}, features: {feature_variables}, file_id: {file_id}")
+        data = retrieve_csv_table(file_id)
+        res = run_rf_model(
+            data=data,
+            feature_cols=feature_variables,
+            target_col=target_variable
+        )   
+        return res
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    

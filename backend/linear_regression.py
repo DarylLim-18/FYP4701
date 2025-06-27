@@ -86,8 +86,8 @@ def merge_data(asthma_df, gas_agg, ozone_agg):
     return merged.drop(columns=['Year_x', 'Year_y'])
 
 
-def run_linear_regression(data, feature_cols, target_col='CURRENT PREVALENCE'):
-    data = data.dropna(subset=feature_cols + [target_col], inplace=True)
+def run_linear_regression(data, feature_cols, target_col):
+    data.dropna(subset=feature_cols + [target_col], inplace=True)
     X = data[feature_cols]
     y = data[target_col]
 
@@ -121,6 +121,15 @@ def run_linear_regression(data, feature_cols, target_col='CURRENT PREVALENCE'):
     plt.tight_layout()
     plt.show()
     
+    res = {
+        "Features Used": feature_cols,
+        "Mean Squared Error": mse,
+        "R² score": r2,
+        "Coefficients": model.coef_.tolist(),
+        "Intercept": model.intercept_,
+    }
+    
+    return res
 
 def main():
     # Load and preprocess
@@ -135,7 +144,7 @@ def main():
     # --- User defines features here ---
     user_features = ['SO2', 'Ozone', 'NO3', 'SO4']  # Default features
     
-    run_linear_regression(merged, gas_vars)
+    run_linear_regression(merged, user_features, 'CURRENT PREVALENCE')
     
 
 

@@ -10,3 +10,6 @@ fastapi
 psycopg2
 python-multipart
 scikit-learn
+matplotlib
+torch
+torch_geometric
