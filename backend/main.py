@@ -19,6 +19,7 @@ import io
 from backend.linear_regression import run_linear_regression
 from backend.random_forest import run_rf_model
 from backend.logistic_regression import run_logistic_regression
+from backend.naive_bayes import run_naive_bayes
 
 app = FastAPI()
 app.add_middleware(
@@ -403,3 +404,21 @@ def run_logistic_regressions(target_variable: str = Query(..., description="Targ
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+
+@app.get("/machine-learning/naive-bayes")
+def run_naive_bayes_models(target_variable: str = Query(..., description="Target variable for model"),
+    feature_variables: list = Query(..., description="List of feature variables"),
+    file_id: int = Query(..., description="ID of the uploaded CSV file")):
+    try:
+        print(f"Running naive bayes with target: {target_variable}, features: {feature_variables}, file_id: {file_id}")
+        data = retrieve_csv_table(file_id)
+        res = run_naive_bayes(
+            data=data,
+            feature_cols=feature_variables,
+            target_col=target_variable
+        )   
+        return res
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))    
