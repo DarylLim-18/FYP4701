@@ -4,23 +4,20 @@ import { useState, useEffect } from 'react';
 function ModelResultsCard({ results, algorithmName }) {
   if (!results || typeof results !== 'object') return null;
 
-  // Helper function to safely format numbers and handle objects
   function formatValue(value) {
     if (typeof value === 'number') {
       return value.toFixed(4);
     }
     if (typeof value === 'object' && value !== null) {
-      return JSON.stringify(value); // Convert objects to string for display
+      return JSON.stringify(value);
     }
     return value;
   }
 
-  // Safely get features used (handle cases where it might not be an array)
   const featuresUsed = Array.isArray(results["Features Used"]) 
     ? results["Features Used"] 
     : [];
 
-  // Convert Worst Residuals to array format if it exists
   const worstResiduals = results["Worst Residuals"] && typeof results["Worst Residuals"] === 'object'
     ? Object.entries(results["Worst Residuals"]).map(([index, value]) => ({
         index,
@@ -31,7 +28,7 @@ function ModelResultsCard({ results, algorithmName }) {
   return (
     <div className="py-4 bg-white p-4 dark:bg-gray-800 rounded-lg shadow-xl mb-6">
       <h2 className="text-lg font-semibold mb-3">Model Results: {algorithmName}</h2>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-4">
           <div>
@@ -48,14 +45,30 @@ function ModelResultsCard({ results, algorithmName }) {
           <div>
             <h3 className="font-medium text-gray-700 dark:text-gray-300">Metrics</h3>
             <div className="mt-2 space-y-2">
-              <div className="flex justify-between">
-                <span>Mean Squared Error:</span>
-                <span className="font-mono">{formatValue(results["Mean Squared Error"])}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>R² Score:</span>
-                <span className="font-mono">{formatValue(results["R² score"])}</span>
-              </div>
+              {results["Mean Squared Error"] !== undefined && (
+                <div className="flex justify-between">
+                  <span>Mean Squared Error:</span>
+                  <span className="font-mono">{formatValue(results["Mean Squared Error"])}</span>
+                </div>
+              )}
+              {results["R² score"] !== undefined && (
+                <div className="flex justify-between">
+                  <span>R² Score:</span>
+                  <span className="font-mono">{formatValue(results["R² score"])}</span>
+                </div>
+              )}
+              {results["Accuracy"] !== undefined && (
+                <div className="flex justify-between">
+                  <span>Accuracy:</span>
+                  <span className="font-mono">{formatValue(results["Accuracy"])}</span>
+                </div>
+              )}
+              {results["Threshold"] !== undefined && (
+                <div className="flex justify-between">
+                  <span>Threshold:</span>
+                  <span className="font-mono">{formatValue(results["Threshold"])}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -93,7 +106,7 @@ function ModelResultsCard({ results, algorithmName }) {
                     </tr>
                   </thead>
                   <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                    {worstResiduals.map(({index, value}) => (
+                    {worstResiduals.map(({ index, value }) => (
                       <tr key={index}>
                         <td className="px-2 py-1 whitespace-nowrap text-sm">{index}</td>
                         <td className="px-2 py-1 whitespace-nowrap text-sm font-mono">{value}</td>
@@ -104,11 +117,40 @@ function ModelResultsCard({ results, algorithmName }) {
               </div>
             </div>
           )}
+
+          {/* {results["Confusion Matrix"] && Array.isArray(results["Confusion Matrix"]) && (
+            <div className="mt-6">
+              <h3 className="font-medium text-gray-700 dark:text-gray-300">Confusion Matrix</h3>
+              <table className="mt-2 table-auto border-collapse border border-gray-300 dark:border-gray-600">
+                <tbody>
+                  {results["Confusion Matrix"].map((row, i) => (
+                    <tr key={i}>
+                      {row.map((value, j) => (
+                        <td key={j} className="border border-gray-300 dark:border-gray-600 px-3 py-1 text-center">
+                          {value}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )} */}
+
+          {results["Classification Report"] && (
+            <div className="mt-4">
+              <h3 className="font-medium text-gray-700 dark:text-gray-300">Classification Report</h3>
+              <pre className="bg-gray-100 dark:bg-gray-700 p-3 rounded text-sm overflow-auto whitespace-pre-wrap">
+                {results["Classification Report"]}
+              </pre>
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 }
+
 
 export default function MLPage() {
   const [datasets, setDatasets] = useState([]);
@@ -190,6 +232,7 @@ export default function MLPage() {
   const mlAlgorithms = [
     { id: 1, name: 'Linear Regression', type: 'regression', api: 'linear-regression' },
     { id: 2, name: 'Random Forest', type: 'classification', api: 'random-forest' },
+    { id: 3, name: 'Logistic Regression', type: 'regression', api: 'logistic-regression'}
 
   ];
 

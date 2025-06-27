@@ -18,6 +18,7 @@ import io
 # Import Machine Learning functions
 from backend.linear_regression import run_linear_regression
 from backend.random_forest import run_rf_model
+from backend.logistic_regression import run_logistic_regression
 
 app = FastAPI()
 app.add_middleware(
@@ -373,7 +374,7 @@ def run_random_forest(target_variable: str = Query(..., description="Target vari
     feature_variables: list = Query(..., description="List of feature variables"),
     file_id: int = Query(..., description="ID of the uploaded CSV file")):
     try:
-        print(f"Running linear regression with target: {target_variable}, features: {feature_variables}, file_id: {file_id}")
+        print(f"Running random forest with target: {target_variable}, features: {feature_variables}, file_id: {file_id}")
         data = retrieve_csv_table(file_id)
         res = run_rf_model(
             data=data,
@@ -385,3 +386,20 @@ def run_random_forest(target_variable: str = Query(..., description="Target vari
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
+
+@app.get("/machine-learning/logistic-regression")
+def run_logistic_regressions(target_variable: str = Query(..., description="Target variable for regression"),
+    feature_variables: list = Query(..., description="List of feature variables"),
+    file_id: int = Query(..., description="ID of the uploaded CSV file")):
+    try:
+        print(f"Running logistic regression with target: {target_variable}, features: {feature_variables}, file_id: {file_id}")
+        data = retrieve_csv_table(file_id)
+        res = run_logistic_regression(
+            data=data,
+            feature_cols=feature_variables,
+            target_col=target_variable
+        )   
+        return res
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
