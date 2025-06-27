@@ -1,0 +1,117 @@
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.naive_bayes import GaussianNB, MultinomialNB, BernoulliNB
+from sklearn.metrics import accuracy_score, classification_report
+import matplotlib.pyplot as plt
+
+def load_data():
+    asthma = pd.read_csv("data/current-asthma-prevalence-by-county-2015_2022.csv", encoding='latin1')
+    gas = pd.read_csv("data/castnet-CA-gasdata-2015-2022.csv", encoding='latin1')
+    ozone = pd.read_csv("data/castnet-CA-ozone-2015-2022.csv", encoding='latin1')
+    return asthma, gas, ozone
+
+def preprocess_asthma(asthma_df):
+    asthma_df = asthma_df.copy()
+    asthma_df.loc[:, 'COUNTY'] = asthma_df['COUNTY'].str.strip().str.title()
+    asthma_df.loc[:, 'YEARS'] = asthma_df['YEARS'].str.replace('\x96', '-', regex=False)
+    expanded = pd.concat([
+        pd.DataFrame([dict(row, YEAR=year)]) for _, row in asthma_df.iterrows()
+        for year in range(int(row['YEARS'].split('-')[0]), int(row['YEARS'].split('-')[1]) + 1)
+    ], ignore_index=True)
+    expanded['YEAR'] = expanded['YEAR'].astype(int)
+    expanded['CURRENT PREVALENCE'] = pd.to_numeric(expanded['CURRENT PREVALENCE'], errors='coerce')
+    expanded['log_PREVALENCE'] = np.log1p(expanded['CURRENT PREVALENCE'])
+    return expanded.dropna(subset=['CURRENT PREVALENCE'])
+
+def preprocess_gas(gas_df):
+    gas_df = gas_df.copy()
+    gas_df['COUNTY'] = gas_df['COUNTY'].str.strip().str.title()
+    gas_df['Year'] = pd.to_numeric(gas_df['Year'], errors='coerce')
+    gas_vars = ['Ca', 'Cl', 'HNO3', 'HNO3 PPB', 'K', 'Mg', 'Na', 'NH4',
+                'NO3', 'SO2', 'SO2 PPB', 'SO4', 'TNO3']
+    for var in gas_vars:
+        gas_df[var] = pd.to_numeric(gas_df[var], errors='coerce')
+    gas_df = gas_df.dropna(subset=['COUNTY', 'Year'] + gas_vars, how='any')
+    gas_agg = gas_df.groupby(['COUNTY', 'Year'])[gas_vars].mean().reset_index()
+    return gas_agg, gas_vars
+
+def preprocess_ozone(ozone_df):
+    ozone_df = ozone_df.copy()
+    ozone_df['COUNTY'] = ozone_df['COUNTY'].str.strip().str.title()
+    ozone_df['Selected Date_Time'] = pd.to_datetime(
+        ozone_df['Selected Date_Time'],
+        format='%m/%d/%Y %I:%M:%S %p',
+        errors='coerce'
+    )
+    ozone_df = ozone_df.dropna(subset=['Selected Date_Time'])
+    ozone_df['Year'] = ozone_df['Selected Date_Time'].dt.year.astype(int)
+    ozone_df['Ozone'] = pd.to_numeric(ozone_df['Ozone'], errors='coerce')
+    ozone_df = ozone_df.dropna(subset=['Ozone'])
+    return ozone_df.groupby(['COUNTY', 'Year'])[['Ozone']].mean().reset_index()
+
+def merge_data(asthma_df, gas_agg, ozone_agg):
+    merged = asthma_df.merge(gas_agg, left_on=['COUNTY', 'YEAR'], right_on=['COUNTY', 'Year'], how='inner')
+    merged = merged.merge(ozone_agg, left_on=['COUNTY', 'YEAR'], right_on=['COUNTY', 'Year'], how='inner')
+    return merged.drop(columns=['Year_x', 'Year_y'])
+
+def run_naive_bayes(data, feature_cols, target_col='CURRENT PREVALENCE', bins=3):
+    data = data.dropna(subset=feature_cols + [target_col])
+    
+    # Bin the target into categories (e.g., Low/Medium/High)
+    data['Target_Class'] = pd.qcut(data[target_col], q=bins, labels=[f'Class_{i}' for i in range(bins)])
+    
+    X = data[feature_cols]
+    y = data['Target_Class']
+    
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    model = GaussianNB()
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+
+    accuracy = accuracy_score(y_test, y_pred)
+    report = classification_report(y_test, y_pred)
+
+    print("\n--- Naive Bayes Classification Results ---")
+    print(f"Features Used: {feature_cols}")
+    print(f"Accuracy: {accuracy:.4f}")
+    print("Classification Report:\n", report)
+    
+    # Plot predicted vs actual classes
+    plt.figure(figsize=(8, 6), num='Naive Bayes Classification')
+    plt.scatter(range(len(y_test)), y_test, alpha=0.6, label="Actual", marker='o')
+    plt.scatter(range(len(y_pred)), y_pred, alpha=0.6, label="Predicted", marker='x')
+    plt.xlabel("Test Sample Index")
+    plt.ylabel("Class")
+    plt.title("Actual vs Predicted Asthma Prevalence Classes")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+def main():
+    # Load and preprocess data
+    asthma, gas, ozone = load_data()
+    asthma_clean = preprocess_asthma(asthma)
+    gas_agg, gas_vars = preprocess_gas(gas)
+    ozone_agg = preprocess_ozone(ozone)
+    merged = merge_data(asthma_clean, gas_agg, ozone_agg)
+
+    # Add 'Ozone' to feature columns
+    gas_vars.append('Ozone')
+
+    # Drop unnecessary columns if they exist
+    for col in ['COMMENT', 'COUNTIES GROUPED']:
+        if col in merged.columns:
+            merged = merged.drop(columns=[col])
+
+    # --- User-defined feature subset for training --- (Can add additional features if required)
+    selected_features = ['SO2', 'Ozone', 'NO3', 'SO4']  
+
+    # Run Naive Bayes classification
+    run_naive_bayes(merged, selected_features)
+
+
+if __name__ == "__main__":
+    main()
