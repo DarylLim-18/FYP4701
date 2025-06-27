@@ -12,6 +12,14 @@ def load_data():
     ozone = pd.read_csv("data/castnet-CA-ozone-2015-2022.csv", encoding='latin1')
     return asthma, gas, ozone
 
+def remove_cols(df, cols):
+    return df.drop(columns=cols, errors='ignore')
+
+def remove_na_rows(df, cols):
+    return df.dropna(subset=cols, how='any')
+
+
+
 def preprocess_asthma(asthma_df):
     asthma_df = asthma_df.copy()
     asthma_df.loc[:, 'COUNTY'] = asthma_df['COUNTY'].str.strip().str.title()
