@@ -4,11 +4,7 @@ from torch_geometric.nn import GCNConv
 import torch.nn.functional as F
 from sklearn.metrics import mean_squared_error, r2_score
 import pandas as pd
-
-var = 'co'
 df = pd.read_csv(f"data/merged_data/complete_merge.csv", encoding='latin1')
-
-
 
 full_features = ['Avg PM10', 'Avg SO2', 'Avg CO', 'Avg NO2', 'Avg OZONE', 'Avg PM2.5']
 
