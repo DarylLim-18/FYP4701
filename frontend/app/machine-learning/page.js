@@ -232,7 +232,8 @@ export default function MLPage() {
   const mlAlgorithms = [
     { id: 1, name: 'Linear Regression', type: 'regression', api: 'linear-regression' },
     { id: 2, name: 'Random Forest', type: 'classification', api: 'random-forest' },
-    { id: 3, name: 'Logistic Regression', type: 'regression', api: 'logistic-regression'}
+    { id: 3, name: 'Logistic Regression', type: 'regression', api: 'logistic-regression'},
+    { id: 4, name: 'Naive Bayes', type: 'regression', api: 'naive-bayes'}
 
   ];
 
