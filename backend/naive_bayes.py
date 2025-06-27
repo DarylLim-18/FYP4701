@@ -2,8 +2,14 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import GaussianNB, MultinomialNB, BernoulliNB
-from sklearn.metrics import accuracy_score, classification_report
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 import matplotlib.pyplot as plt
+
+import base64
+import io
+import matplotlib.pyplot as plt
+from sklearn.naive_bayes import GaussianNB, MultinomialNB, BernoulliNB
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 
 def load_data():
     asthma = pd.read_csv("data/current-asthma-prevalence-by-county-2015_2022.csv", encoding='latin1')
@@ -56,29 +62,35 @@ def merge_data(asthma_df, gas_agg, ozone_agg):
     return merged.drop(columns=['Year_x', 'Year_y'])
 
 def run_naive_bayes(data, feature_cols, target_col='CURRENT PREVALENCE', bins=3):
-    data = data.dropna(subset=feature_cols + [target_col])
-    
-    # Bin the target into categories (e.g., Low/Medium/High)
-    data['Target_Class'] = pd.qcut(data[target_col], q=bins, labels=[f'Class_{i}' for i in range(bins)])
-    
+    data = data.dropna(subset=feature_cols + [target_col]).copy()
+
+    # Bin target into classes (quantile-based)
+    class_labels = [f"Class_{i}" for i in range(bins)]
+    data['Target_Class'] = pd.qcut(data[target_col], q=bins, labels=class_labels)
+
     X = data[feature_cols]
     y = data['Target_Class']
-    
+
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
     model = GaussianNB()
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
 
-    accuracy = accuracy_score(y_test, y_pred)
-    report = classification_report(y_test, y_pred)
+    acc = accuracy_score(y_test, y_pred)
+    cm = confusion_matrix(y_test, y_pred).tolist()
+
+    # Get classification report as a dict (for structured JSON)
+    report_dict = classification_report(y_test, y_pred, output_dict=True)
+    report_str = classification_report(y_test, y_pred)  # for readable version
 
     print("\n--- Naive Bayes Classification Results ---")
     print(f"Features Used: {feature_cols}")
-    print(f"Accuracy: {accuracy:.4f}")
-    print("Classification Report:\n", report)
-    
-    # Plot predicted vs actual classes
+    print(f"Accuracy: {acc:.2f}")
+    print("\nConfusion Matrix:\n", cm)
+    print("\nClassification Report:\n", report_str)
+
+        # Plot predicted vs actual classes
     plt.figure(figsize=(8, 6), num='Naive Bayes Classification')
     plt.scatter(range(len(y_test)), y_test, alpha=0.6, label="Actual", marker='o')
     plt.scatter(range(len(y_pred)), y_pred, alpha=0.6, label="Predicted", marker='x')
@@ -90,6 +102,17 @@ def run_naive_bayes(data, feature_cols, target_col='CURRENT PREVALENCE', bins=3)
     plt.tight_layout()
     plt.show()
 
+
+    return {
+        "Model": "Naive Bayes",
+        "Features Used": feature_cols,
+        "Accuracy": acc,
+        "Confusion Matrix": cm,
+        "Classification Report": report_str,
+        "Classification Report (Dict)": report_dict,
+        "Class Labels": class_labels
+    }
+    
 def main():
     # Load and preprocess data
     asthma, gas, ozone = load_data()
