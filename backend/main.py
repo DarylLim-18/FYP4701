@@ -14,6 +14,7 @@ import libpysal
 import numpy as np
 import csv
 import io
+import json
 
 # Import Machine Learning functions
 from backend.linear_regression import run_linear_regression
@@ -35,6 +36,8 @@ app.add_middleware(
 
 asthma_df = pd.read_csv("data/lifetime-asthma-prevalence-by-county-2015_2022.csv", encoding='latin1')
 gdf = gpd.read_file("backend/shapefiles/CA_Counties.shp")
+
+
 
 # Clean the dataset
 # After reading CSV
@@ -82,7 +85,8 @@ def compute_morans_i(merged: GeoDataFrame, variable: str, year: str):
 
 def compute_morans_i_local(merged: GeoDataFrame, variable: str, year: str):
     merged = merged.copy()
-    
+    if variable not in merged.columns:
+        raise ValueError(f"Variable '{variable}' not found in the data.")
     w = Queen.from_dataframe(merged)
     w.transform = 'r'
 
@@ -95,13 +99,6 @@ def compute_morans_i_local(merged: GeoDataFrame, variable: str, year: str):
     merged['p_value'] = moran_local.p_sim
     merged['z_score'] = moran_local.z.tolist()
     
-    # counties = []
-    # for county in merged['NAME'].tolist():
-    #     if county not in counties:
-    #         counties.append(county)
-    
-    # print(f'Running Local Moran\'s I for {variable} in {year}\nCounties: {counties}\nLocal I values: {moran_local.Is}\nP-values: {moran_local.p_sim}\nZ-scores: {moran_local.z}')
-
     # Classify cluster types
     cluster_labels = []
     for i, (Ii, sig, q) in enumerate(zip(moran_local.Is, moran_local.p_sim, moran_local.q)):
@@ -119,9 +116,14 @@ def compute_morans_i_local(merged: GeoDataFrame, variable: str, year: str):
         else:
             cluster_labels.append('Not Significant')
 
-    
+    merged['cluster_label'] = cluster_labels
     # Return GeoJSON for frontend display
-    return merged.to_json()
+    output = merged.to_json()
+    output = json.loads(output)
+    
+    with open("pretty_output.geojson", "w") as f:
+        output = json.dump(output, f, indent=4)
+    return output
 
 
 def get_db_connection():
