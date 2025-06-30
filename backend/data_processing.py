@@ -1,4 +1,5 @@
 import pandas as pd
+import os
 
 # this is going to be hard coded for now
 
@@ -75,7 +76,41 @@ def combine_data(asthma_df: pd.DataFrame, df: pd.DataFrame):
     asthma_df['Year'] = asthma_df['Year'].astype(int)
     return pd.merge(asthma_df, df, on=['County Name', 'Year'], how='inner')
 
+def split_data_by_strata_and_save(
+    df: pd.DataFrame,
+    strata_col: str = 'STRATA',
+    output_dir: str = 'data/strata_data',
+    file_format: str = 'csv'
+):
+    """
+    Splits the DataFrame into multiple DataFrames based on unique values in the specified strata column
+    and saves each as a separate file.
 
+    Parameters:
+        df (pd.DataFrame): The input DataFrame.
+        strata_col (str): The column name used to split the DataFrame.
+        output_dir (str): Directory where the files will be saved.
+        file_format (str): Format to save files in ('csv', 'xlsx', or 'pkl').
+    """
+    os.makedirs(output_dir, exist_ok=True)
+    strata_values = df[strata_col].unique()
+
+    for strata in strata_values:
+        strata_df = df[df[strata_col] == strata].reset_index(drop=True)
+        filename = f"{strata_col}_{str(strata)}.{file_format}"
+        filepath = os.path.join(output_dir, filename)
+
+        if file_format == 'csv':
+            strata_df.to_csv(filepath, index=False)
+        elif file_format == 'xlsx':
+            strata_df.to_excel(filepath, index=False)
+        elif file_format == 'pkl':
+            strata_df.to_pickle(filepath)
+        else:
+            raise ValueError(f"Unsupported file format: {file_format}")
+        
+df = load_data("data/merged_data/complete_merge.csv")
+split_data_by_strata_and_save(df, strata_col='STRATA', output_dir='data/strata_data', file_format='csv')
 
 # merge all cleaned data into one file on column named 'county name'
 

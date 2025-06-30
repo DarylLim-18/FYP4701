@@ -33,15 +33,15 @@ app.add_middleware(
 
 
 
-asthma_df = pd.read_csv("data/current-asthma-prevalence-by-county-2015_2022.csv", encoding='latin1')
+asthma_df = pd.read_csv("data/lifetime-asthma-prevalence-by-county-2015_2022.csv", encoding='latin1')
 gdf = gpd.read_file("backend/shapefiles/CA_Counties.shp")
 
 # Clean the dataset
 # After reading CSV
 asthma_df['YEARS'] = asthma_df['YEARS'].str.replace('\x96', '-', regex=False)
 #asthma_df = asthma_df[asthma_df['AGE GROUP'] == 'All ages']
-asthma_df = asthma_df.drop('COUNTIES GROUPED', axis=1, errors='coerce')
-asthma_df = asthma_df.drop('COMMENT', axis=1, errors='coerce')
+#asthma_df = asthma_df.drop('COUNTIES GROUPED', axis=1, errors='coerce')
+#asthma_df = asthma_df.drop('COMMENT', axis=1, errors='coerce')
 asthma_df['COUNTY'] = asthma_df['COUNTY'].str.strip().str.title()
 gdf['NAME'] = gdf['NAME'].str.strip().str.title()
 
@@ -52,9 +52,9 @@ def get_asthma_geodata(year: str):
     if asthma_year_df.empty:
         raise HTTPException(status_code=404, detail=f"No data found for year {year}")
 
-    asthma_year_df['CURRENT PREVALENCE'] = pd.to_numeric(asthma_year_df['CURRENT PREVALENCE'], errors='coerce')
+    asthma_year_df['LIFETIME PREVALENCE'] = pd.to_numeric(asthma_year_df['LIFETIME PREVALENCE'], errors='coerce')
     merged = gdf.merge(asthma_year_df, left_on='NAME', right_on='COUNTY')
-    merged = merged.dropna(subset=['CURRENT PREVALENCE'])
+    merged = merged.dropna(subset=['LIFETIME PREVALENCE'])
     return merged
 
 # Moran's I Analysis
