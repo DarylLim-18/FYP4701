@@ -7,7 +7,7 @@ import pandas as pd
 import os
 
 
-def load_data(csv_path: str, features: list, label_col: str = "LIFETIME PREVALENCE") -> Data:
+def load_data(csv_path: str, features: list, label_col: str = "LIFETIME PREVALENCE", edge_col: str = "County Name") -> Data:
     df = pd.read_csv(csv_path, encoding='latin1')
     x = torch.tensor(df[features].values, dtype=torch.float)
     y = torch.tensor(df[label_col].values, dtype=torch.float)
@@ -16,7 +16,7 @@ def load_data(csv_path: str, features: list, label_col: str = "LIFETIME PREVALEN
     edges = []
     for i in range(len(df)):
         for j in range(i + 1, len(df)):
-            if df.iloc[i]["County Name"] == df.iloc[j]["County Name"]:
+            if df.iloc[i][edge_col] == df.iloc[j][edge_col]:
                 edges.append((i, j))
                 edges.append((j, i))  # Undirected
 
@@ -71,10 +71,12 @@ def run_pipeline(
     csv_path: str,
     features: list,
     label_col: str = "LIFETIME PREVALENCE",
+    edge_col: str = "County Name",
     hidden_dim: int = 16,
     epochs: int = 1000,
     lr: float = 0.01,
     verbose: bool = True
+    
 ):
     data, df = load_data(csv_path, features, label_col)
     model = GCN(input_dim=len(features), hidden_dim=hidden_dim)
@@ -95,6 +97,7 @@ def main():
     csv_path = "data/merged_data/complete_merge.csv"
     full_features = ['Avg PM10', 'Avg SO2', 'Avg CO', 'Avg NO2', 'Avg OZONE', 'Avg PM2.5']
     label_col = "LIFETIME PREVALENCE"
+    edge_col = "County Name"
     hidden_dim = 32
     epochs = 10000
     learning_rate = 0.01
@@ -105,6 +108,7 @@ def main():
         csv_path=csv_path,
         features=full_features,
         label_col=label_col,
+        edge_col=edge_col,
         hidden_dim=hidden_dim,
         epochs=epochs,
         lr=learning_rate,
