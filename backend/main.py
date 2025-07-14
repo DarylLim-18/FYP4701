@@ -423,4 +423,4 @@ def run_naive_bayes_models(target_variable: str = Query(..., description="Target
         return res
     
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))    
+        raise HTTPException(status_code=500, detail=str(e))
