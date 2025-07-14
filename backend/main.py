@@ -21,6 +21,7 @@ from backend.linear_regression import run_linear_regression
 from backend.random_forest import run_rf_model
 from backend.logistic_regression import run_logistic_regression
 from backend.naive_bayes import run_naive_bayes
+from backend.asthma_arthimetic_mean import preprocess_gas_data
 
 app = FastAPI()
 app.add_middleware(
@@ -422,5 +423,21 @@ def run_naive_bayes_models(target_variable: str = Query(..., description="Target
         )   
         return res
     
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@app.get("/machine-learning/asthma-arthimetic-mean")
+def get_gas_analysis_data():
+    try:
+        county_year_means, yearly_stats = preprocess_gas_data()
+        
+        def df_to_records(dfs):
+            return {gas: df.to_dict(orient="records") for gas, df in dfs.items()}
+
+        return {
+            "county_year_means": df_to_records(county_year_means),
+            "yearly_stats": df_to_records(yearly_stats)
+        }
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
