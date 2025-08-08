@@ -1,18 +1,11 @@
-'use client'; // Needed for interactive sidebar
-import "./globals.css";
-import Sidebar from './components/Sidebar/Sidebar';
-
+// app/layout.js
+import './globals.css';
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>
-        <div className="flex h-screen">
-          <Sidebar />   
-          <div className="flex-1 overflow-auto">
-            <main className="p-6">{children}</main>
-          </div>
-        </div>
+      <body className="bg-gray-900 text-white min-h-screen">
+        {children}
       </body>
     </html>
   );
