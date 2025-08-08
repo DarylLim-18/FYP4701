@@ -10,7 +10,8 @@ import {
     FiUser,
     FiSettings,
     FiChevronLeft,
-    FiChevronRight
+    FiChevronRight,
+    FiBarChart
   } from 'react-icons/fi';
 import { BsGraphUp } from "react-icons/bs";
 
@@ -31,7 +32,13 @@ export default function Sidebar() {
       icon: <BsGraphUp className="w-6 h-6" />, 
       label: 'Machine Learning' 
     },
+    { href: '/dashboard/data-analysis', // Where page will link to
+      icon: <FiBarChart className="w-6 h-6" />, 
+      label: 'Data Analysis' 
+    },
+  
     { href: '/dashboard/settings', icon: <FiSettings className="w-6 h-6" />, label: 'Settings' },
+
   ];
 
   return (
