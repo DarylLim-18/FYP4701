@@ -25,18 +25,20 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   const navItems = [
-    { href: '/', icon: <FiHome className="w-6 h-6" />, label: 'Dashboard' },
-    { href: '/data', icon: <FiDatabase className="w-6 h-6" />, label: 'Data' },
+    { href: '/dashboard', icon: <FiHome className="w-6 h-6" />, label: 'Dashboard' },
+    { href: '/dashboard/data', icon: <FiDatabase className="w-6 h-6" />, label: 'Data' },
     { 
-      href: '/machine-learning', 
+      href: '/dashboard/machine-learning', 
       icon: <BsGraphUp className="w-6 h-6" />, 
       label: 'Machine Learning' 
     },
-    { href: '/data-analysis', // Where page will link to
+    { href: '/dashboard/data-analysis', // Where page will link to
       icon: <FiBarChart className="w-6 h-6" />, 
       label: 'Data Analysis' 
     },
-    { href: '/settings', icon: <FiSettings className="w-6 h-6" />, label: 'Settings' },
+  
+    { href: '/dashboard/settings', icon: <FiSettings className="w-6 h-6" />, label: 'Settings' },
+
   ];
 
   return (
@@ -47,7 +49,7 @@ export default function Sidebar() {
         {/* Brand Section */}
         <div className="p-4 flex items-center justify-between border-b">
           {!collapsed && (
-            <Link href="/" className="flex items-center">
+            <Link href="/dashboard" className="flex items-center">
               <div className="w-10 h-10 relative">
               <Image
                 src={logo} // Update with your logo path
