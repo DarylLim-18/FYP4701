@@ -238,7 +238,7 @@ export default function MLPage() {
   ];
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div className="bg-gray-800 rounded-lg shadow-xl p-6 text-white">
       <h1 className="text-2xl font-bold mb-6">Machine Learning Configuration</h1>
 
       {/* Dataset Selection */}

@@ -26,7 +26,7 @@ export default function AnalysisPage() {
 
   return (
     <div className="p-6">
-      <h1 className="text-3xl font-bold mb-6">Asthma Arithmetic Mean Analysis (2015–2022)</h1>
+      <h1 className="text-3xl font-bold mb-6 text-white">Asthma Arithmetic Mean Analysis (2015–2022)</h1>
 
       {Object.entries(data.county_year_means).map(([gas, records]) => (
         <div key={gas} className="mb-12 border-t pt-6">
