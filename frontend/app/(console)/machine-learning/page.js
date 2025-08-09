@@ -161,7 +161,6 @@ export default function MLPage() {
   const [isTraining, setIsTraining] = useState(false);
   const [modelResult, setModelResult] = useState(null);
 
-  // Update this to match your FastAPI backend
   const BASE_URL = 'http://localhost:8000';
 
   // Fetch datasets on component mount
@@ -230,11 +229,10 @@ export default function MLPage() {
 
 
   const mlAlgorithms = [
-    { id: 1, name: 'Linear Regression', type: 'regression', api: 'linear-regression' },
-    { id: 2, name: 'Random Forest', type: 'classification', api: 'random-forest' },
-    { id: 3, name: 'Logistic Regression', type: 'regression', api: 'logistic-regression'},
-    { id: 4, name: 'Naive Bayes', type: 'regression', api: 'naive-bayes'}
-
+    { id: 1, name: 'Linear Regression', type: 'Regression', api: 'linear-regression' },
+    { id: 2, name: 'Random Forest', type: 'Classification', api: 'random-forest' },
+    { id: 3, name: 'Logistic Regression', type: 'Classification', api: 'logistic-regression'},
+    { id: 4, name: 'Naive Bayes', type: 'Classification', api: 'naive-bayes'}
   ];
 
   return (

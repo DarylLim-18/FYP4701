@@ -1,44 +1,39 @@
-'use client';
-import { useState, useEffect } from 'react';
-// import { getDatasetInfo } from '@/utils/datasetUtils';
+'use client'
+import { useState, useEffect, useCallback } from 'react'
 
-export default function DatasetTable({ folderPath = '../data' }) {
-  const [datasets, setDatasets] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+const BASE = 'http://localhost:8000'
 
-  useEffect(() => {
-    const refreshDatasets = async () => {
-      setLoading(true);
-      try {
-        const response = await fetch("http://localhost:8000/list"); // Change URL if deployed
-        if (!response.ok) {
-          throw new Error("Failed to fetch datasets");
-        }
-        const data = await response.json();
-        setDatasets(data);
-        setError(null);
-      } catch (err) {
-        setError("Failed to load datasets");
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
+export default function DatasetTable() {
+  const [datasets, setDatasets] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-    refreshDatasets();
-  }, [folderPath]);
+  const refreshDatasets = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await fetch(`${BASE}/list`)
+      if (!res.ok) throw new Error('Failed to fetch datasets')
+      const data = await res.json()
+      setDatasets(Array.isArray(data) ? data : [])
+      setError(null)
+    } catch (e) {
+      console.error(e)
+      setError('Failed to load datasets')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
+  useEffect(() => { refreshDatasets(); }, []);
 
-  const handleDelete = (filePath) => {
-    if (confirm('Are you sure you want to delete this dataset?')) {
-      try {
-        fs.unlinkSync(filePath);
-        refreshDatasets();
-      } catch (err) {
-        setError('Failed to delete file');
-        console.error(err);
-      }
+  const handleDelete = async (id) => {
+    if (!confirm('Delete this dataset?')) return;
+    try {
+      const res = await fetch(`http://localhost:8000/files/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Delete failed');
+      await refreshDatasets(); // see #2
+    } catch (e) {
+      setError(e.message || 'Failed to delete file');
     }
   };
 
@@ -60,33 +55,33 @@ export default function DatasetTable({ folderPath = '../data' }) {
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
-  {datasets.length > 0 ? (
-    datasets.map((dataset) => (
-      <tr key={dataset.id} className="hover:bg-gray-50">
-        <td className="px-6 py-4 whitespace-nowrap">
-          <div className="text-sm font-medium text-blue-600">{dataset.file_name}</div>
-        </td>
-        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-          <button
-            onClick={() => handleDelete(dataset.id)}
-            className="text-red-600 hover:text-red-900 mr-4"
-          >
-            Delete
-          </button>
-          <button className="text-blue-600 hover:text-blue-900">
-            Preview
-          </button>
-        </td>
-      </tr>
-    ))
-  ) : (
-    <tr>
-      <td colSpan="2" className="px-6 py-4 text-center text-sm text-gray-500">
-        No datasets found in the directory
-      </td>
-    </tr>
-  )}
-</tbody>
+          {datasets.length > 0 ? (
+            datasets.map((dataset) => (
+              <tr key={dataset.id} className="hover:bg-gray-50">
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm font-medium text-blue-600">{dataset.file_name}</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <button
+                    onClick={() => handleDelete(dataset.id)}
+                    className="text-red-600 hover:text-red-900 mr-4"
+                  >
+                    Delete
+                  </button>
+                  <button className="text-blue-600 hover:text-blue-900">
+                    Preview
+                  </button>
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="2" className="px-6 py-4 text-center text-sm text-gray-500">
+                No datasets found in the directory
+              </td>
+            </tr>
+          )}
+        </tbody>
 
       </table>
     </div>

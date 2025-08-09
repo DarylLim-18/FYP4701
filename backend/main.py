@@ -136,16 +136,6 @@ def get_db_connection():
         port="5432"
     )
 
-
-def get_db_connection():
-    return psycopg2.connect(
-        dbname="postgres",
-        user="postgres",
-        password="hanikodi4701!",
-        host="localhost",
-        port="5432"
-    )
-
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
