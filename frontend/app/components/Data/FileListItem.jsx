@@ -6,7 +6,7 @@ import { FiEye, FiTrash2 } from 'react-icons/fi'
 export default function FileListItem({ file, onPreview, onDelete }) {
   // API gives { id, file_name, ... } – size/type may be unknown, so we only show name.
   return (
-    <div className="flex items-center p-3 bg-slate-800 rounded-lg hover:bg-slate-700/60 transition-colors">
+    <div className="flex items-center p-3 bg-slate-800 rounded-lg hover:bg-slate-700/70 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg">
       <FileIcon name={file.file_name} type={file.file_type} />
       <div className="ml-3 flex-grow overflow-hidden">
         <p className="font-medium text-slate-200 truncate" title={file.file_name}>
