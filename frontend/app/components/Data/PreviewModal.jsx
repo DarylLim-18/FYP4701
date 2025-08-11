@@ -1,4 +1,3 @@
-// components/Data/PreviewModal.jsx
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
@@ -15,9 +14,10 @@ export default function PreviewModal({ open, onClose, file }) {
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState(null)
   const [hasMore, setHasMore] = useState(false)
+  const [entered, setEntered] = useState(false)
 
   const sentinelRef = useRef(null)
-  const fetchingRef = useRef(false) // guard against double fetches
+  const fetchingRef = useRef(false)
 
   const fetchPage = useCallback(async (offset) => {
     if (!file || fetchingRef.current) return
@@ -38,7 +38,7 @@ export default function PreviewModal({ open, onClose, file }) {
         setHeaders(Array.isArray(json.columns) ? json.columns : [])
         setRows(Array.isArray(json.rows) ? json.rows : [])
         setTotal(json.total ?? 0)
-        setHasMore((json.rows?.length || 0) + 0 < (json.total ?? 0))
+        setHasMore((json.rows?.length || 0) < (json.total ?? 0))
       } else {
         setRows(prev => {
           const next = Array.isArray(json.rows) ? json.rows : []
@@ -56,23 +56,20 @@ export default function PreviewModal({ open, onClose, file }) {
     }
   }, [file])
 
-  // Reset & load first page when opened or file changes
   useEffect(() => {
     if (!open || !file) return
     setRows([]); setHeaders([]); setTotal(0); setHasMore(false); setError(null)
     fetchPage(0)
   }, [open, file, fetchPage])
 
-  // Infinite scroll observer
   useEffect(() => {
     if (!open || !file) return
     const el = sentinelRef.current
     if (!el) return
-
     const obs = new IntersectionObserver((entries) => {
       const [entry] = entries
       if (entry.isIntersecting && hasMore && !loadingMore && !initialLoading) {
-        fetchPage(rows.length) // next page starts at current count
+        fetchPage(rows.length)
       }
     }, { root: null, rootMargin: '200px 0px', threshold: 0 })
 
@@ -80,11 +77,26 @@ export default function PreviewModal({ open, onClose, file }) {
     return () => obs.disconnect()
   }, [open, file, rows.length, hasMore, loadingMore, initialLoading, fetchPage])
 
+  useEffect(() => {
+    if (open) {
+      const id = requestAnimationFrame(() => setEntered(true))
+      return () => cancelAnimationFrame(id)
+    } else {
+      setEntered(false)
+    }
+  }, [open])
+
   if (!open || !file) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
-      <div className="bg-slate-900 text-slate-100 w-full max-w-5xl rounded-2xl shadow-xl" onClick={(e) => e.stopPropagation()}>
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity duration-300 ${entered ? 'opacity-100' : 'opacity-0'}`}
+      onClick={onClose}
+    >
+      <div
+        className={`bg-slate-900 text-slate-100 w-full max-w-5xl rounded-2xl shadow-xl border border-white/10 origin-center transition-all duration-300 ease-out ${entered ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
           <h3 className="text-lg font-semibold truncate">
             {file.file_name}
@@ -121,7 +133,6 @@ export default function PreviewModal({ open, onClose, file }) {
                       ))}
                     </tr>
                   ))}
-                  {/* sentinel row */}
                   <tr>
                     <td colSpan={headers.length}>
                       <div ref={sentinelRef} className="h-2 w-full flex items-center justify-center">

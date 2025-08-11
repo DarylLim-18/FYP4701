@@ -65,3 +65,18 @@ body {
   scrollbar-width: thin;
   scrollbar-color: rgba(100, 116, 139, 0.5) transparent;
 }
+
+/* @keyframes neonIn {
+  0%   { box-shadow: 0 0 0 0 rgba(0,0,0,0); opacity: .6; }
+  100% { box-shadow:
+            0 0 24px rgba(56,189,248,0.25),
+            0 0 48px rgba(56,189,248,0.10);
+          opacity: 1; }
+}
+@keyframes chipGlow {
+  0%   { box-shadow: 0 0 0 0 rgba(217,70,239,0); opacity: .8; }
+  100% { box-shadow:
+            0 0 24px rgba(217,70,239,0.35),
+            0 0 60px rgba(217,70,239,0.15);
+          opacity: 1; }
+} */
