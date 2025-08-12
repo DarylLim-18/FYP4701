@@ -40,7 +40,8 @@ export default function UploadModal({ onUploadSuccess }) {
         throw new Error(await response.text());
       }
 
-      onUploadSuccess?.();
+      const result = await response.json();
+      onUploadSuccess?.(result);
       setIsOpen(false);
       setSelectedFile(null);
     } catch (err) {
