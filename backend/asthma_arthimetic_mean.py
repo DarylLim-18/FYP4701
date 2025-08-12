@@ -77,5 +77,6 @@ if __name__ == "__main__":
         
         # --- Print table ---
         print(f"\nYearly summary stats for {gas.upper()}:")
-        print(yearly_stats[gas].to_string(index=False))
+        print(yearly_stats[gas].to_string(index=False, float_format="{:.3f}".format))
+        
 

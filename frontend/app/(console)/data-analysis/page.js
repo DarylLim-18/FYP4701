@@ -25,8 +25,8 @@ export default function AnalysisPage() {
   if (!data) return <p className="p-4">Loading...</p>;
 
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold mb-6 text-white">Asthma Arithmetic Mean Analysis (2015–2022)</h1>
+    <div className="p-6 bg-slate-800/50 rounded-2xl shadow-2xl p-6 md:p-8 border border-slate-700 backdrop-blur-sm">
+      <h1 className="text-4xl md:text-4xl font-extrabold mb-6 text-white tracking-tight">Asthma Arithmetic Mean Analysis (2015–2022)</h1>
 
       {Object.entries(data.county_year_means).map(([gas, records]) => (
         <div key={gas} className="mb-12 border-t pt-6">
@@ -38,7 +38,7 @@ export default function AnalysisPage() {
           {/* CLI-style Summary */}
           <div className="mt-6">
             <h3 className="text-lg font-medium mb-2">Text Summary</h3>
-            <pre className="bg-gray-100 text-sm p-4 rounded whitespace-pre overflow-x-auto">
+            <pre className="bg-slate-800/50 rounded-2xl shadow-2xl p-6 md:p-8 border border-slate-700 backdrop-blur-sm font-bold text-lg">
               {formatSummaryText(data.yearly_stats[gas], gas)}
             </pre>
           </div>
@@ -116,9 +116,16 @@ function formatSummaryText(statsArray, gas) {
   const header = columns.map((col) => col.padEnd(18)).join('');
   const rows = statsArray
     .map((row) =>
-      columns.map((col) => String(row[col]).padEnd(18)).join('')
-    )
-    .join('\n');
+      columns.map((col) => {const val = row[col];
+        if (typeof val === 'number'){
+          if (col.toLowerCase() === 'year') {
+            return String(val).padEnd(18);
+          }
+          return val.toFixed(2).padEnd(18);
+        }
+        return String(val).padEnd(18);
+      }).join('')
+    ).join('\n')
 
   return `Yearly summary stats for ${gas.toUpperCase()}:\n\n${header}\n${rows}`;
 }

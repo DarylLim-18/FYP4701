@@ -21,7 +21,6 @@ from backend.linear_regression import run_linear_regression
 from backend.random_forest import run_rf_model
 from backend.logistic_regression import run_logistic_regression
 from backend.naive_bayes import run_naive_bayes
-from backend.naive_bayes import run_all_naive_bayes
 from backend.asthma_arthimetic_mean import preprocess_gas_data
 
 app = FastAPI()
