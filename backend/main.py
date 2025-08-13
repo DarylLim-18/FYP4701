@@ -13,7 +13,7 @@ from geopandas import GeoDataFrame
 import libpysal
 import numpy as np
 import csv
-import io
+import io, os
 import json
 
 # Import Machine Learning functions
@@ -338,6 +338,57 @@ def get_csv_headers(file_id: int):
 
         return {"columns": headers}
 
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if 'cur' in locals(): cur.close()
+        if 'conn' in locals(): conn.close()
+
+@app.get("/preview/{file_id}")
+def preview_file(
+    file_id: int = Path(..., description="ID of the file to preview"),
+    offset: int = Query(0, ge=0, description="Row offset to start from"),
+    limit: int = Query(100, ge=1, le=1000, description="How many rows to return")
+):
+    """
+    Paginated JSON preview
+    -> { columns: [...], rows: [...], total: number }
+    Supports .csv, .xlsx, .xls stored in the DB as bytes.
+    """
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT file_name, file_data FROM files WHERE file_id = %s", (file_id,))
+        result = cur.fetchone()
+        if result is None:
+            raise HTTPException(status_code=404, detail="File not found")
+
+        import os, io, pandas as pd
+        file_name, file_data = result
+        raw = file_data.tobytes()
+        ext = os.path.splitext(file_name or "")[1].lower()
+
+        if ext == ".csv":
+            df = pd.read_csv(io.StringIO(raw.decode("latin1")))
+        elif ext in (".xlsx", ".xls"):
+            df = pd.read_excel(io.BytesIO(raw), engine=None)
+        else:
+            raise HTTPException(status_code=400, detail=f"Unsupported file type: {ext or 'unknown'}")
+
+        total = len(df)
+        if offset >= total:
+            slice_df = df.iloc[0:0]  # empty
+        else:
+            slice_df = df.iloc[offset: offset + limit]
+
+        return JSONResponse(content={
+            "columns": list(df.columns),
+            "rows": slice_df.to_dict(orient="records"),
+            "total": int(total)
+        })
+
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     finally:

@@ -2,16 +2,18 @@
 import { useState, useCallback } from 'react'
 import UploadDropzone from '../../components/Data/UploadDropzone'
 import FileList from '../../components/Data/FileList'
+import PreviewModal from '../../components/Data/PreviewModal'
 
 export default function DataPage() {
   const [refreshKey, setRefreshKey] = useState(0)
+  const [previewOpen, setPreviewOpen] = useState(false)
+  const [previewFile, setPreviewFile] = useState(null)
 
   const bump = useCallback(() => setRefreshKey(k => k + 1), [])
 
-  // TODO: wire up your custom CSV/XLSX preview here
   const handlePreview = (file) => {
-    console.log('Preview clicked:', file)
-    // e.g., open a modal and fetch a small sample from BE
+    setPreviewFile(file)
+    setPreviewOpen(true)
   }
 
   return (
@@ -33,6 +35,11 @@ export default function DataPage() {
           </div>
         </div>
       </div>
+      <PreviewModal
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        file={previewFile}
+      />
     </main>
   )
 }
