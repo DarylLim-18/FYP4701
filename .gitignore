@@ -1,4 +1,4 @@
 .vscode/settings.json
 backend/__pycache__/
 data/spatial_analysis/moran_local_output.geojson
-frontend/node_modules
+/node_modules
