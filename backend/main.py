@@ -1,19 +1,16 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException, Query, Path
 from fastapi.middleware.cors import CORSMiddleware
 import psycopg2
-from psycopg2 import sql
-from datetime import datetime
 from backend.moran_analysis import compute_morans_i
 from fastapi.responses import JSONResponse
 import pandas as pd
+from pandas import DataFrame
 import geopandas as gpd
 from libpysal.weights import Queen
 from esda.moran import Moran, Moran_Local
 from geopandas import GeoDataFrame
-import libpysal
 import numpy as np
-import csv
-import io, os
+import io
 import json
 
 # Import Machine Learning functions
@@ -35,56 +32,61 @@ app.add_middleware(
 
 
 
-asthma_df = pd.read_csv("data/lifetime-asthma-prevalence-by-county-2015_2022.csv", encoding='latin1')
+lifetime_df = pd.read_csv("data/lifetime-asthma-prevalence-by-county-2015_2022.csv", encoding='latin1')
 gdf = gpd.read_file("backend/shapefiles/CA_Counties.shp")
+current_df = pd.read_csv("data/current-asthma-prevalence-by-county-2015_2022.csv", encoding='latin1')
 
 
-
-# Clean the dataset
-# After reading CSV
-asthma_df['YEARS'] = asthma_df['YEARS'].str.replace('\x96', '-', regex=False)
-#asthma_df = asthma_df[asthma_df['AGE GROUP'] == 'All ages']
-#asthma_df = asthma_df.drop('COUNTIES GROUPED', axis=1, errors='coerce')
-#asthma_df = asthma_df.drop('COMMENT', axis=1, errors='coerce')
-asthma_df['COUNTY'] = asthma_df['COUNTY'].str.strip().str.title()
+#Lifetime
+lifetime_df['YEARS'] = lifetime_df['YEARS'].str.replace('\x96', '-', regex=False)
+lifetime_df['COUNTY'] = lifetime_df['COUNTY'].str.strip().str.title()
 gdf['NAME'] = gdf['NAME'].str.strip().str.title()
 
+#Current
+current_df['YEARS'] = current_df['YEARS'].str.replace('\x96', '-', regex=False)
+current_df = current_df[current_df['AGE GROUP'] == 'All ages']
+current_df = current_df.drop('COUNTIES GROUPED', axis=1, errors='coerce')
+current_df = current_df.drop('COMMENT', axis=1, errors='coerce')
+current_df['COUNTY'] = current_df['COUNTY'].str.strip().str.title()
+    
+        
+
 # Merge function
-def get_asthma_geodata(year: str):
-    asthma_year_df = asthma_df[asthma_df['YEARS'] == year].copy()
+def get_asthma_geodata(dataset: DataFrame, target: str, year: str):
+    asthma_year_df = dataset[dataset['YEARS'] == year].copy()
 
     if asthma_year_df.empty:
         raise HTTPException(status_code=404, detail=f"No data found for year {year}")
 
-    asthma_year_df['LIFETIME PREVALENCE'] = pd.to_numeric(asthma_year_df['LIFETIME PREVALENCE'], errors='coerce')
+    asthma_year_df[target] = pd.to_numeric(asthma_year_df[target], errors='coerce')
     merged = gdf.merge(asthma_year_df, left_on='NAME', right_on='COUNTY')
-    merged = merged.dropna(subset=['LIFETIME PREVALENCE'])
+    merged = merged.dropna(subset=[target])
     return merged
 
 # Moran's I Analysis
-def compute_morans_i(merged: GeoDataFrame, variable: str, year: str):
-    # Ensure that the variable exists in the merged data
-    if variable not in merged.columns:
-        raise ValueError(f"Variable '{variable}' not found in the data.")
+# def compute_morans_i(merged: GeoDataFrame, variable: str, year: str):
+#     # Ensure that the variable exists in the merged data
+#     if variable not in merged.columns:
+#         raise ValueError(f"Variable '{variable}' not found in the data.")
 
-    # Create spatial weights matrix
-    w = Queen.from_dataframe(merged)
-    w.transform = 'r'  # Row-standardize
+#     # Create spatial weights matrix
+#     w = Queen.from_dataframe(merged)
+#     w.transform = 'r'  # Row-standardize
     
-    # Get the values for the variable (e.g., asthma prevalence)
-    variable_values = merged[variable].values
+#     # Get the values for the variable (e.g., asthma prevalence)
+#     variable_values = merged[variable].values
     
-    # Calculate Moran's I
-    moran = Moran(variable_values, w)
+#     # Calculate Moran's I
+#     moran = Moran(variable_values, w)
     
-    # Return results
-    return {
-        "Moran's I": moran.I, 
-        "z-value": moran.z.tolist(),
-        "p-value": moran.p_norm
-        }
+#     # Return results
+#     return {
+#         "Moran's I": moran.I, 
+#         "z-value": moran.z.tolist(),
+#         "p-value": moran.p_norm
+#         }
 
-def compute_morans_i_local(merged: GeoDataFrame, variable: str = "LIFETIME PREVALENCE", year: str = "2015-2016"):
+def compute_morans_i_local(merged: GeoDataFrame, variable: str, year: str):
     merged = merged.copy()
     if variable not in merged.columns:
         raise ValueError(f"Variable '{variable}' not found in the data.")
@@ -118,25 +120,22 @@ def compute_morans_i_local(merged: GeoDataFrame, variable: str = "LIFETIME PREVA
             cluster_labels.append('Not Significant')
 
     merged['cluster_label'] = cluster_labels    
-    # Return GeoJSON for frontend display
 
     if merged.crs is None:
-        # set to your shapefile CRS if known; many CA county shapefiles are EPSG:3310
-        # replace 3310 with whatever gdf.crs is in your project
         merged.set_crs(epsg=3310, inplace=True)
     merged = merged.to_crs(epsg=4326)
 
     output = merged.to_json()
     output = json.loads(output)
-    name = None
+    name = ""
     
     if variable == "LIFETIME PREVALENCE":
         name = "lifetime"
     else:
         name = "current"
-    with open(f"frontend\public\{name}-{year}.geojson", "w") as f:
+    with open(f"frontend\public\geojson\{name}-{year}.geojson", "w") as f:
         output = json.dump(output, f, indent=4)
-    return output
+    return True
 
 
 def get_db_connection():
@@ -148,18 +147,30 @@ def get_db_connection():
         port="5432"
     )
 
+
+def get_all_geojson(current_df, lifetime_df, gdf):
+    years = ['2015-2016', '2017-2018', '2019-2020', '2021-2022']
+    for year in years:
+        merged_curr = get_asthma_geodata(current_df, "CURRENT PREVALENCE", year)
+        compute_morans_i_local(merged_curr, 'CURRENT PREVALENCE', year)
+        merged_life = get_asthma_geodata(lifetime_df, "LIFETIME PREVALENCE", year)
+        compute_morans_i_local(merged_life, 'LIFETIME PREVALENCE', year)
+    
+    return True
+
+
+
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
 
-@app.get("/moran")
-async def run_moran(variable: str = Query(..., description="Variable for Moran's I analysis"), year: str = Query(..., description="Year for asthma data")):
+@app.get("/get_geojson")
+async def run_moran():
     """
-    Run Moran's I analysis on the specified variable.
+    Get's all the GeoJSON files for lifetime, current and all years
     """
     try:
-        merged = get_asthma_geodata(year)
-        result = compute_morans_i(merged, variable, year)
+        result = get_all_geojson(current_df, lifetime_df, gdf)
         return result
     
     except ValueError as e:
