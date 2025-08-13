@@ -84,7 +84,7 @@ def compute_morans_i(merged: GeoDataFrame, variable: str, year: str):
         "p-value": moran.p_norm
         }
 
-def compute_morans_i_local(merged: GeoDataFrame, variable: str, year: str):
+def compute_morans_i_local(merged: GeoDataFrame, variable: str = "LIFETIME PREVALENCE", year: str = "2015-2016"):
     merged = merged.copy()
     if variable not in merged.columns:
         raise ValueError(f"Variable '{variable}' not found in the data.")
@@ -117,8 +117,15 @@ def compute_morans_i_local(merged: GeoDataFrame, variable: str, year: str):
         else:
             cluster_labels.append('Not Significant')
 
-    merged['cluster_label'] = cluster_labels
+    merged['cluster_label'] = cluster_labels    
     # Return GeoJSON for frontend display
+
+    if merged.crs is None:
+        # set to your shapefile CRS if known; many CA county shapefiles are EPSG:3310
+        # replace 3310 with whatever gdf.crs is in your project
+        merged.set_crs(epsg=3310, inplace=True)
+    merged = merged.to_crs(epsg=4326)
+
     output = merged.to_json()
     output = json.loads(output)
     name = None
