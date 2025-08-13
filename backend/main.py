@@ -121,8 +121,13 @@ def compute_morans_i_local(merged: GeoDataFrame, variable: str, year: str):
     # Return GeoJSON for frontend display
     output = merged.to_json()
     output = json.loads(output)
+    name = None
     
-    with open("pretty_output.geojson", "w") as f:
+    if variable == "LIFETIME PREVALENCE":
+        name = "lifetime"
+    else:
+        name = "current"
+    with open(f"frontend\public\{name}-{year}.geojson", "w") as f:
         output = json.dump(output, f, indent=4)
     return output
 
