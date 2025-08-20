@@ -6,12 +6,12 @@ from fastapi.responses import JSONResponse
 import pandas as pd
 from pandas import DataFrame
 import geopandas as gpd
-from libpysal.weights import Queen
+from libpysal.weights import Queen, Rook, KNN
 from esda.moran import Moran, Moran_Local
 from geopandas import GeoDataFrame
 import numpy as np
-import io
-import json
+import io, json, os
+
 
 # Import Machine Learning functions
 from backend.linear_regression import run_linear_regression
@@ -29,6 +29,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+# Load multi-level geopackages:
+GPKG_PATH = {
+    "adm0": "backend/geopackages/adm0.gpkg", # Country level
+    "adm1": "backend/geopackages/adm1.gpkg", # State level
+    "adm2": "backend/geopackages/adm2.gpkg"  # County level
+}
+
+COLUMN_MAPPINGS = {
+    "adm0": {"code": "iso_a3", "name": "ADMIN", "alias": "country"},
+    "adm1": {"code": "iso_3166_2", "name": "NAME_1", "alias": "state"},
+    "adm2": {"code": "adm2_code", "name": "NAME_2", "alias": "county"}
+}
 
 
 
@@ -63,35 +76,12 @@ def get_asthma_geodata(dataset: DataFrame, target: str, year: str):
     merged = merged.dropna(subset=[target])
     return merged
 
-# Moran's I Analysis
-# def compute_morans_i(merged: GeoDataFrame, variable: str, year: str):
-#     # Ensure that the variable exists in the merged data
-#     if variable not in merged.columns:
-#         raise ValueError(f"Variable '{variable}' not found in the data.")
-
-#     # Create spatial weights matrix
-#     w = Queen.from_dataframe(merged)
-#     w.transform = 'r'  # Row-standardize
-    
-#     # Get the values for the variable (e.g., asthma prevalence)
-#     variable_values = merged[variable].values
-    
-#     # Calculate Moran's I
-#     moran = Moran(variable_values, w)
-    
-#     # Return results
-#     return {
-#         "Moran's I": moran.I, 
-#         "z-value": moran.z.tolist(),
-#         "p-value": moran.p_norm
-#         }
-
 def compute_morans_i_local(merged: GeoDataFrame, variable: str, year: str):
     merged = merged.copy()
     if variable not in merged.columns:
         raise ValueError(f"Variable '{variable}' not found in the data.")
     w = Queen.from_dataframe(merged)
-    w.transform = 'r'
+    w.transform = 'R'
 
     x = merged[variable].values
     x = np.nan_to_num(x)
@@ -133,11 +123,46 @@ def compute_morans_i_local(merged: GeoDataFrame, variable: str, year: str):
         name = "lifetime"
     else:
         name = "current"
-    with open(f"frontend\public\geojson\{name}-{year}.geojson", "w") as f:
+        
+    os.makedirs("frontend/public/geojson", exist_ok=True)
+
+    with open(f"frontend/public/geojson/{name}-{year}.geojson", "w") as f:
         output = json.dump(output, f, indent=4)
     return True
 
 
+def assign_weights(gdf: GeoDataFrame, wtype: str, k: int | None):
+    wtype = wtype.lower()
+    if wtype == "queen":
+        w = Queen.from_dataframe(gdf)
+    elif wtype == "rook":
+        w = Rook.from_dataframe(gdf)
+    elif wtype == "knn":
+        if k is None:
+            raise HTTPException(status_code=400, detail="k cannot be None for KNN")
+        cent = gdf.geometry.representative_point()
+        w = KNN.from_dataframe(gdf.set_geomertry(cent), k=k)
+    else:
+        raise HTTPException(status_code=400, detail=f"Unsupported weight type: {wtype}")
+    w.transform = 'R'
+    return w
+
+def join_layers(dataset: DataFrame):
+    # Check if dataset is in country level
+    if "iso_a3" in dataset.columns:
+        layer, left, right = adm0, "iso_a3", "iso_a3"
+    # Check if dataset is in state level
+    elif "iso_3166_2" in dataset.columns:
+        layer, left, right = adm1, "iso_3166_2", "iso_3166_2"
+    # Check if dataset is in county level
+    elif {"lon", "lat"}.issubset(dataset.columns):
+        gdf = gpd.GeoDataFrame(dataset, geometry=gpd.points_from_xy(dataset.lon, dataset.lat), crs="EPSG:4326")
+        joined = gdf.sjoin(dataset, adm2[["adm2_code", "geom"]], predicate="within")
+        result = joined.groupby("adm2_code", as_index=False)["value"].mean().merge(adm2, on="adm2_code")[["adm2_code","value","geom"]].to_crs(4326)
+        return result
+    else:
+        
+    
 def get_db_connection():
     return psycopg2.connect(
         dbname="postgres",
@@ -185,6 +210,23 @@ async def run_moran_local(variable: str = Query(..., description="Variable for M
     Run Local Moran's I analysis on the specified variable.
     """
     try:
+        merged = get_asthma_geodata(year)
+        result = compute_morans_i_local(merged, variable, year)
+        return JSONResponse(content=result)
+    
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@app.get("/moran_local/{file_id}")
+async def run_moran_local(variable: str = Query(..., description="Variable for Moran's I analysis"), year: str = Query(..., description="Year for asthma data")):
+    """
+    Run Local Moran's I analysis on the specified variable.
+    """
+    try:
+        file = retrieve_csv_table(file_id)
         merged = get_asthma_geodata(year)
         result = compute_morans_i_local(merged, variable, year)
         return JSONResponse(content=result)
@@ -285,38 +327,6 @@ async def list_files():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-    
-# @app.get("/files/{file_id}/data")
-# def get_csv_data(file_id: int):
-#     try:
-#         conn = get_db_connection()
-#         cur = conn.cursor()
-#         cur.execute("SELECT file_data FROM files WHERE file_id = %s", (file_id,))
-#         result = cur.fetchone()
-
-#         if result is None:
-#             raise HTTPException(status_code=404, detail="File not found")
-
-#         file_data = result[0]
-#         csv_content = file_data.tobytes().decode("utf-8")
-#         reader = pd.read_csv(io.StringIO(csv_content), encoding='latin1')
-#         print(type(reader))
-#         print(type(asthma_df))
-#         all_rows = list(reader)
-
-#         if not all_rows:
-#             return {"columns": [], "rows": []}
-
-#         header = all_rows[0]
-#         data = all_rows[1:]
-
-#         return {"columns": header, "rows": data}
-
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
-#     finally:
-#         if 'cur' in locals(): cur.close()
-#         if 'conn' in locals(): conn.close()
 
 
 @app.get("/files/{file_id}")
