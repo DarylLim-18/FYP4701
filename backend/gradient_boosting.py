@@ -18,6 +18,7 @@ def run_gradient_boosting(data: pd.DataFrame, feature_cols: list, target_col: st
     )
 
     base = GradientBoostingRegressor(random_state=42)
+    
 
     # Reasonable search space (fast + effective)
     param_dist = {
