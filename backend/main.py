@@ -19,6 +19,9 @@ from backend.random_forest import run_rf_model
 from backend.logistic_regression import run_logistic_regression
 from backend.naive_bayes import run_naive_bayes
 from backend.asthma_arthimetic_mean import preprocess_gas_data
+from backend.gradient_boosting import run_gradient_boosting
+from backend.svr import run_svr_model
+
 
 app = FastAPI()
 app.add_middleware(
@@ -499,6 +502,42 @@ def run_naive_bayes_models(target_variable: str = Query(..., description="Target
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/machine-learning/gradient-boosting")
+def run_gradient_boosting_endpoint(target_variable: str = Query(..., description="Target variable for regression"),
+    feature_variables: list = Query(..., description="List of feature variables"),
+    file_id: int = Query(..., description="ID of the uploaded CSV file")):
+    try:
+        print(f"Running naive bayes with target: {target_variable}, features: {feature_variables}, file_id: {file_id}")
+        data = retrieve_csv_table(file_id)
+        res = run_gradient_boosting(
+            data=data,
+            feature_cols=feature_variables,
+            target_col=target_variable
+        )   
+        return res
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/machine-learning/svr")
+def run_svr_endpoint(target_variable: str = Query(..., description="Target variable for regression"),
+    feature_variables: list = Query(..., description="List of feature variables"),
+    file_id: int = Query(..., description="ID of the uploaded CSV file")):
+    try:
+        print(f"Running naive bayes with target: {target_variable}, features: {feature_variables}, file_id: {file_id}")
+        data = retrieve_csv_table(file_id)
+        res = run_svr_model(
+            data=data,
+            feature_cols=feature_variables,
+            target_col=target_variable
+        )   
+        return res
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
     
 @app.get("/machine-learning/asthma-arthimetic-mean")
 def get_gas_analysis_data():

@@ -72,7 +72,7 @@ export default function Map() {
 
   useEffect(() => {
     // The file must live in Next.js /public as: /public/moran_local_output.geojson
-    fetch('/moran_local_output.geojson')
+    fetch('geojsons/lifetime-2015-2016.geojson')
       .then((res) => res.json())
       .then((data) => setGeoData(data))
       .catch((err) => console.error('Failed to load local GeoJSON:', err));
