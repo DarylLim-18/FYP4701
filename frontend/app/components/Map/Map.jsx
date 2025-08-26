@@ -2,7 +2,7 @@
 import { MapContainer, TileLayer, useMap, Marker, Popup, GeoJSON } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 
 // Fix default icon paths
 delete L.Icon.Default.prototype._getIconUrl;
@@ -23,9 +23,12 @@ L.Icon.Default.mergeOptions({
                     '#FFEDA0';
   };
 
+const defaultCenter = [37.1841, -119.4696]
+const defaultZoom = 6
 // --- Choropleth layer ---
-function ChoroplethLayer({ data }) {
+function ChoroplethLayer({ data, setInfo }) {
   const map = useMap();
+  const geoJsonRef = useRef();
 
 
 
@@ -42,67 +45,88 @@ function ChoroplethLayer({ data }) {
     };
   };
 
+  const highlightFeature = (e) => {
+    const layer = e.target;
+    layer.setStyle({
+      weight: 5,
+      color: '#666',
+      dashArray: '',
+      fillOpacity: 0.7
+    });
+    setInfo(layer.feature.properties);
+    
+    setTimeout(() => layer.bringToFront(), 1); // Delays highlight so that it is brought to front after updating info control.
+  };
 
+  const resetHighlight = (e) => {
+    // Use the style function to reset instead of relying on react-leaflet's reset
+    geoJsonRef.current.resetStyle(e.target);
+    setInfo(null);
+  };
 
+  const zoomToFeature = (e) => {
+    map.fitBounds(e.target.getBounds());
+  };
 
 
   // Proper hover highlight + reset
   const onEachFeature = (feature, layer) => {
     layer.on({
-      mouseover: (e) => {
-        const t = e.target;
-        t.setStyle({ weight: 3, color: '#666', fillOpacity: 0.5 });
-        if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) t.bringToFront();
-      },
-      mouseout: (e) => {
-        const t = e.target;
-        // Reset using our style() so we don’t depend on Leaflet’s resetStyle
-        t.setStyle(style(t.feature));
-      },
+      mouseover: highlightFeature,
+      mouseout: resetHighlight,
+      click: zoomToFeature
     });
   };
 
-  // Fit bounds once data is available
+  // Create a ref to access the GeoJSON layer instance
   useEffect(() => {
-    if (!data) return;
-    const tmp = L.geoJSON(data);
-    const b = tmp.getBounds();
-    // if (b.isValid()) map.fitBounds(b, { padding: [10, 10] });
-  }, [data, map]);
+    if (geoJsonRef.current) {
+      // Store the layer instance for use in event handlers
+      geoJsonRef.current = geoJsonRef.current.leafletElement;
+    }
+  }, [data]);
 
-  return data ? <GeoJSON data={data} style={style} onEachFeature={onEachFeature} /> : null;
+  return data ? (
+    <GeoJSON 
+      ref={geoJsonRef}
+      data={data} 
+      style={style} 
+      onEachFeature={onEachFeature} 
+    />
+  ) : null;
 }
 
-//   // Info Control (top right hover box)
-// const InfoControl = ({ info }) => {
-//   return (
-//     <div className="leaflet-top leaflet-right">
-//       <div
-//         className="info"
-//         style={{
-//           padding: "6px 8px",
-//           font: "14px/16px Arial, Helvetica, sans-serif",
-//           background: "rgba(255,255,255,0.8)",
-//           boxShadow: "0 0 15px rgba(0,0,0,0.2)",
-//           borderRadius: "5px",
-//         }}
-//       >
-//         <h4 style={{ margin: "0 0 5px", color: "#777" }}>US Population Density</h4>
-//         {info ? (
-//           <div>
-//             <b>{info.name}</b>
-//             <br />
-//             {info.density} people / mi<sup>2</sup>
-//           </div>
-//         ) : (
-//           "Hover over a state"
-//         )}
-//       </div>
-//     </div>
-//   );
-// };
+// Info Control (top right hover box)
+const InfoControl = ({ info }) => {
+  return (
+    <div className="leaflet-top leaflet-right">
+      <div
+        className="info"
+        style={{
+          padding: "6px 8px",
+          font: "14px/16px Arial, Helvetica, sans-serif",
+          background: "rgba(255,255,255,0.8)",
+          boxShadow: "0 0 15px rgba(0,0,0,0.2)",
+          borderRadius: "5px",
+          margin: "15px",
+        }}
+      >
+        <h4 style={{ margin: "0 0 5px", color: "#777" }}>Lifetime Prevalence</h4>
+        {info ? (
+          <div>
+            <b>{info['NAME']}</b>
+            <br />
+            {info['LIFETIME PREVALENCE']}%
+          </div>
+        ) : (
+          "Hover over a region"
+        )}
+      </div>
+    </div>
+  );
+};
 
-// --- LEGEND CONTROL (bottom-right) ---
+// Legend (bottom-right)
 const Legend = () => {
   const grades = [0, 21, 27, 35, 41];
 
@@ -117,6 +141,8 @@ const Legend = () => {
           border: "1px solid #ccc",
           lineHeight: "18px",
           color: "#555",
+          margin: "15px",
+
         }}
       >
         {grades.map((from, i) => {
@@ -157,8 +183,8 @@ export default function Map() {
 
   return (
     <MapContainer
-      center={[37.1841, -119.4696]}
-      zoom={6}
+      center={defaultCenter}
+      zoom={defaultZoom}
       scrollWheelZoom
       style={{ height: '500px', width: '100%' }}
     >
@@ -166,8 +192,8 @@ export default function Map() {
         attribution='&copy; OpenStreetMap &copy; CARTO'
         url='https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
       />
-      <ChoroplethLayer data={geoData} />
-      {/* <InfoControl info={info} /> */}
+      <ChoroplethLayer data={geoData} setInfo={setInfo} />
+      <InfoControl info={info} />
       <Legend />
       <Marker position={[37.1841, -119.4696]}>
         <Popup>California</Popup>
