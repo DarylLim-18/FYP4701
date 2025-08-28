@@ -12,10 +12,15 @@ L.Icon.Default.mergeOptions({
   shadowUrl:     'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
-// Get max value of LIFETIME PREVALENCE
+
+const VARIABLE = "Avg PM2.5"
+const PATH = "geojsons/lisa-15-queen.geojson"
+const COLUMN_NAME = "county"
+
+// Get max value of Avg PM2.5
 const getMaxValue = (data) => {
   const values = data.features.map(
-    f => Number(f.properties?.['LIFETIME PREVALENCE']) || 0
+    f => Number(f.properties?.['Avg PM2.5']) || 0
   );
   return Math.max(...values);
 };
@@ -44,7 +49,7 @@ function ChoroplethLayer({ data, setInfo, onLoad, maxValue}) {
 
   // Style function for polygons
   const style = (feature) => {
-    const v = feature?.properties?.['LIFETIME PREVALENCE'];
+    const v = feature?.properties?.[VARIABLE];
     return {
       fillColor: getColor(v, maxValue),
       weight: 1,
@@ -123,12 +128,12 @@ const InfoControl = ({ info }) => {
           margin: "15px",
         }}
       >
-        <h4 style={{ margin: "0 0 5px", color: "#777" }}>Lifetime Prevalence</h4>
+        <h4 style={{ margin: "0 0 5px", color: "#777" }}>{VARIABLE}</h4>
         {info ? (
           <div style={{ color: "#000000"}}>
-            <b>{info['NAME']}</b>
+            <b>{info[COLUMN_NAME]}</b>
             <br />
-            {info['LIFETIME PREVALENCE']}%
+            {info[VARIABLE]}%
           </div>
         ) : (
           <div style={{ color: "#000000"}}>
@@ -141,12 +146,15 @@ const InfoControl = ({ info }) => {
 };
 
 // Legend (bottom-right)
-const Legend = ({maxValue}) => {
-    const step = maxValue / 5;
-    const grades = [0, Math.round(1*step, 0), Math.round(2*step, 0), Math.round(3*step, 0), Math.round(4*step, 0)];
-    // const grades = [0,1,2,3,4]
+const Legend = ({ maxValue }) => {
+  const values = 5;
+  const step = maxValue / values;
 
+  // Generate bin starts without rounding to avoid duplicate values
+  const grades = Array.from({ length: values }, (_, i) => i * step);
 
+  const fmt = (n) =>
+    Number.isFinite(n) ? new Intl.NumberFormat().format(Math.round(n)) : n;
 
   return (
     <div className="leaflet-bottom leaflet-right">
@@ -160,25 +168,24 @@ const Legend = ({maxValue}) => {
           lineHeight: "18px",
           color: "#555",
           margin: "15px",
-
         }}
       >
         {grades.map((from, i) => {
-          const to = grades[i + 1];
+          const to = i < grades.length - 1 ? grades[i + 1] : maxValue;
           return (
-            <div key={from}>
+            <div key={`bin-${i}`}>
               <i
                 style={{
-                  background: getColor(from + 1, maxValue),
+                  background: getColor(from + step * 0.5, maxValue),
                   width: 18,
                   height: 18,
                   float: "left",
                   marginRight: 8,
                   opacity: 0.7,
                 }}
-              ></i>
-              {from}
-              {to ? `–${to}` : "+"}
+              />
+              {fmt(from)}–{i < grades.length - 1 ? fmt(to) : fmt(maxValue)} 
+              {i === grades.length - 1 ? "+" : ""}
             </div>
           );
         })}
@@ -186,6 +193,7 @@ const Legend = ({maxValue}) => {
     </div>
   );
 };
+
 
 const LoadingSpinner = () => {
   return (
@@ -213,14 +221,14 @@ export default function Map() {
 
   useEffect(() => {
     // The file must live in Next.js /public as: /public/moran_local_output.geojson
-    fetch('geojsons/lifetime-2015-2016.geojson')
+    fetch(PATH)
       .then((res) => res.json())
       .then((data) => {
         setGeoData(data);
         // We'll wait for the layer to signal it's loaded before hiding the spinner
     //     // Compute max value from features
     //   const values = data.features.map(
-    //     f => Number(f.properties?.['LIFETIME PREVALENCE']) || 0
+    //     f => Number(f.properties?.['Avg PM2.5']) || 0
     //   );
     //   const computedMax = Math.max(...values);
     //   setMaxValue(computedMax);
