@@ -1,5 +1,5 @@
 .vscode/settings.json
 backend/__pycache__/
-/node_modules
+node_modules
 geojsons
 geopackages
