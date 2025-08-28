@@ -12,31 +12,41 @@ L.Icon.Default.mergeOptions({
   shadowUrl:     'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
+// Get max value of LIFETIME PREVALENCE
+const getMaxValue = (data) => {
+  const values = data.features.map(
+    f => Number(f.properties?.['LIFETIME PREVALENCE']) || 0
+  );
+  return Math.max(...values);
+};
+
+
   // Color scale
-  const getColor = (d) => {
-    const v = Number(d) || 0;
-    return v > 41 ? '#800026' :
-           v > 35 ? '#E31A1C' :
-           v > 27 ? '#FD8D3C' :
-           v > 21 ? '#FEB24C' :
-           v >  0 ? '#FED976' :
-                    '#FFEDA0';
-  };
+const getColor = (d, maxValue) => {
+  if (!maxValue || maxValue === 0) return '#FFEDA0';
+  const step = maxValue / 5;
+//   console.log('Step value:', 4 * step);
+  
+  return d > 4 * step ? '#800026' :
+         d > 3 * step ? '#E31A1C' :
+         d > 2 * step ? '#FD8D3C' :
+         d > 1 * step ? '#FEB24C' :
+         d > 0        ? '#FED976' :
+                        '#FFEDA0';
+};
 
 const defaultCenter = [37.1841, -119.4696]
 const defaultZoom = 6
 // --- Choropleth layer ---
-function ChoroplethLayer({ data, setInfo }) {
+function ChoroplethLayer({ data, setInfo, onLoad, maxValue}) {
   const map = useMap();
   const geoJsonRef = useRef();
-
-
 
   // Style function for polygons
   const style = (feature) => {
     const v = feature?.properties?.['LIFETIME PREVALENCE'];
     return {
-      fillColor: getColor(v),
+      fillColor: getColor(v, maxValue),
       weight: 1,
       opacity: 1,
       color: 'white',
@@ -68,7 +78,6 @@ function ChoroplethLayer({ data, setInfo }) {
     map.fitBounds(e.target.getBounds());
   };
 
-
   // Proper hover highlight + reset
   const onEachFeature = (feature, layer) => {
     layer.on({
@@ -80,11 +89,14 @@ function ChoroplethLayer({ data, setInfo }) {
 
   // Create a ref to access the GeoJSON layer instance
   useEffect(() => {
-    if (geoJsonRef.current) {
+    if (geoJsonRef.current && data) {
       // Store the layer instance for use in event handlers
       geoJsonRef.current = geoJsonRef.current.leafletElement;
+
+      // Notify parent that the layer has been loaded
+      if (onLoad) onLoad();
     }
-  }, [data]);
+  }, [data, onLoad]);
 
   return data ? (
     <GeoJSON 
@@ -113,13 +125,15 @@ const InfoControl = ({ info }) => {
       >
         <h4 style={{ margin: "0 0 5px", color: "#777" }}>Lifetime Prevalence</h4>
         {info ? (
-          <div>
+          <div style={{ color: "#000000"}}>
             <b>{info['NAME']}</b>
             <br />
             {info['LIFETIME PREVALENCE']}%
           </div>
         ) : (
-          "Hover over a region"
+          <div style={{ color: "#000000"}}>
+          Hover over a region
+          </div>
         )}
       </div>
     </div>
@@ -127,8 +141,12 @@ const InfoControl = ({ info }) => {
 };
 
 // Legend (bottom-right)
-const Legend = () => {
-  const grades = [0, 21, 27, 35, 41];
+const Legend = ({maxValue}) => {
+    const step = maxValue / 5;
+    const grades = [0, Math.round(1*step, 0), Math.round(2*step, 0), Math.round(3*step, 0), Math.round(4*step, 0)];
+    // const grades = [0,1,2,3,4]
+
+
 
   return (
     <div className="leaflet-bottom leaflet-right">
@@ -151,7 +169,7 @@ const Legend = () => {
             <div key={from}>
               <i
                 style={{
-                  background: getColor(from + 1),
+                  background: getColor(from + 1, maxValue),
                   width: 18,
                   height: 18,
                   float: "left",
@@ -169,16 +187,56 @@ const Legend = () => {
   );
 };
 
+const LoadingSpinner = () => {
+  return (
+    <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90 z-10">
+      <div className="flex flex-col items-center">
+        {/* Using a GIF from the public folder */}
+        <img 
+          src="/doraemon.gif"  // Path to your GIF in the public folder
+          alt="Loading..." 
+          className="h-100 w-100 mb-3" // Adjust size as needed
+        />
+        <p className="text-gray-700 font-medium">Loading map data...</p>
+      </div>
+    </div>
+  );
+};
+
 export default function Map() {
   const [geoData, setGeoData] = useState(null);
   const [info, setInfo] = useState(null);
+  const [maxValue, setMaxValue] = useState(0); // Add state for maxValue
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLayerLoaded, setIsLayerLoaded] = useState(false);
 
   useEffect(() => {
     // The file must live in Next.js /public as: /public/moran_local_output.geojson
     fetch('geojsons/lifetime-2015-2016.geojson')
       .then((res) => res.json())
-      .then((data) => setGeoData(data))
-      .catch((err) => console.error('Failed to load local GeoJSON:', err));
+      .then((data) => {
+        setGeoData(data);
+        // We'll wait for the layer to signal it's loaded before hiding the spinner
+    //     // Compute max value from features
+    //   const values = data.features.map(
+    //     f => Number(f.properties?.['LIFETIME PREVALENCE']) || 0
+    //   );
+    //   const computedMax = Math.max(...values);
+    //   setMaxValue(computedMax);
+    //   console.log('Values:', values);
+    //   console.log('Computed max value:', Math.max(...values));
+    //   console.log('Max lifetime prevalence:', maxValue);
+    // Use it directly
+        const computedMax = getMaxValue(data);
+        setMaxValue(computedMax);
+        console.log('Max lifetime prevalence:', computedMax);
+
+      })
+      .catch((err) => {
+        console.error('Failed to load GeoJSON:', err);
+        // setIsLoading(false);
+      });
   }, []);
 
   return (
@@ -192,12 +250,13 @@ export default function Map() {
         attribution='&copy; OpenStreetMap &copy; CARTO'
         url='https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
       />
-      <ChoroplethLayer data={geoData} setInfo={setInfo} />
+      <ChoroplethLayer data={geoData} setInfo={setInfo} maxValue={maxValue}/>
       <InfoControl info={info} />
-      <Legend />
+      <Legend maxValue={maxValue} />
       <Marker position={[37.1841, -119.4696]}>
         <Popup>California</Popup>
       </Marker>
+      {/* <LoadingSpinner  /> */}
     </MapContainer>
   );
 }
