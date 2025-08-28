@@ -149,7 +149,10 @@ export default function MachineLearningPage() {
     { id: 3, name: 'Logistic Regression', type: 'Classification', api: 'logistic-regression' },
     { id: 4, name: 'Naive Bayes', type: 'Classification', api: 'naive-bayes' },
     { id: 5, name: 'Gradient Boosting',     type: 'Regression', api: 'gradient-boosting' },
-    { id: 6, name: 'Support Vector Regression', type: 'Regression', api: 'svr' }
+    { id: 6, name: 'Support Vector Regression', type: 'Regression', api: 'svr' },
+    { id: 7, name: 'Elastic nett', type: 'Regression', api: 'elastic-net' },
+    { id: 8, name: 'Extra trees regressor', type: 'Regression', api: 'extra-trees-regressor' },
+    { id: 9, name: 'kNN', type: 'Regression', api: 'knn' }
   ]
 
   useEffect(() => {
