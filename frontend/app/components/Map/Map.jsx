@@ -14,13 +14,13 @@ L.Icon.Default.mergeOptions({
 
 
 const VARIABLE = "Avg PM2.5"
-const PATH = "geojsons/lisa-15-queen.geojson"
+const PATH = "geojsons/lisa-1.geojson"
 const COLUMN_NAME = "county"
 
 // Get max value of Avg PM2.5
 const getMaxValue = (data) => {
   const values = data.features.map(
-    f => Number(f.properties?.['Avg PM2.5']) || 0
+    f => Number(f.properties?.[VARIABLE]) || 0
   );
   return Math.max(...values);
 };
