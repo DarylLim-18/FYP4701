@@ -133,7 +133,8 @@ const InfoControl = ({ info }) => {
           <div style={{ color: "#000000"}}>
             <b>{info[COLUMN_NAME]}</b>
             <br />
-            {info[VARIABLE]}%
+            {/* round to 2dp */}
+            {Math.round(info[VARIABLE] * 100) / 100}%
           </div>
         ) : (
           <div style={{ color: "#000000"}}>
