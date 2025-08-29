@@ -24,8 +24,9 @@ from backend.naive_bayes import run_naive_bayes
 from backend.asthma_arthimetic_mean import preprocess_gas_data
 from backend.gradient_boosting import run_gradient_boosting
 from backend.svr import run_svr_model
-
-
+from backend.extra_trees import run_extra_trees_regressor
+from backend.elastic_net import run_elastic_net_regression
+from backend.kNN import run_knn_classifier
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
@@ -773,7 +774,68 @@ def run_svr_endpoint(target_variable: str = Query(..., description="Target varia
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+@app.get("/machine-learning/extra-trees-regressor")
+def run_extra_trees_regressor_endpoint(target_variable: str = Query(..., description="Target variable for regression"),
+    feature_variables: list = Query(..., description="List of feature variables"),
+    file_id: int = Query(..., description="ID of the uploaded CSV file")
+):
+    try:
+        print(f"Running Extra Trees Regressor with target: {target_variable}, features: {feature_variables}, file_id: {file_id}")
+        data = retrieve_csv_table(file_id)
+        res = run_extra_trees_regressor(
+            data=data,
+            feature_cols=feature_variables,
+            target_col=target_variable
+        )   
+        return res
 
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@app.get("/machine-learning/elastic-net")
+def run_elastic_net_endpoint(
+    target_variable: str = Query(..., description="Target variable for regression"),
+    feature_variables: list = Query(..., description="List of feature variables"),
+    file_id: int = Query(..., description="ID of the uploaded CSV file"),
+    alpha: float = Query(1.0, description="Regularization strength (default=1.0)"),
+    l1_ratio: float = Query(0.5, description="ElasticNet mixing parameter (0=Ridge, 1=Lasso)")
+):
+    try:
+        print(f"Running Elastic Net with target: {target_variable}, features: {feature_variables}, file_id: {file_id}")
+        data = retrieve_csv_table(file_id)
+        res = run_elastic_net_regression(
+            data=data,
+            feature_cols=feature_variables,
+            target_col=target_variable,
+            alpha=alpha,
+            l1_ratio=l1_ratio
+        )
+        return res
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@app.get("/machine-learning/knn")
+def run_knn_endpoint(
+    target_variable: str = Query(..., description="Target variable for classification"),
+    feature_variables: list = Query(..., description="List of feature variables"),
+    file_id: int = Query(..., description="ID of the uploaded CSV file"),
+    n_neighbors: int = Query(5, description="Number of neighbors (default=5)")
+):
+    try:
+        print(f"Running KNN with target: {target_variable}, features: {feature_variables}, file_id: {file_id}, k={n_neighbors}")
+        data = retrieve_csv_table(file_id)
+        res = run_knn_classifier(
+            data=data,
+            feature_cols=feature_variables,
+            target_col=target_variable,
+            n_neighbors=n_neighbors
+        )
+        return res
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
     
 @app.get("/machine-learning/asthma-arthimetic-mean")
 def get_gas_analysis_data():
