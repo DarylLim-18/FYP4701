@@ -109,8 +109,13 @@ def split_data_by_strata_and_save(
         else:
             raise ValueError(f"Unsupported file format: {file_format}")
         
-df = load_data("data/merged_data/complete_merge.csv")
-split_data_by_strata_and_save(df, strata_col='STRATA', output_dir='data/strata_data', file_format='csv')
+# df = load_data("data/merged_data/complete_merge.csv")
+# split_data_by_strata_and_save(df, strata_col='STRATA', output_dir='data/strata_data', file_format='csv')
 
 # merge all cleaned data into one file on column named 'county name'
 
+df = load_data("data/merged_data/cleaned_merged_asthma_ozone.csv")
+
+df = df[df['Year'] == 2019]
+
+df.to_csv("data/spatial_test-3o.csv", index=False)

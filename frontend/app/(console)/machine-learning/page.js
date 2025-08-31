@@ -147,7 +147,12 @@ export default function MachineLearningPage() {
     { id: 1, name: 'Linear Regression', type: 'Regression', api: 'linear-regression' },
     { id: 2, name: 'Random Forest', type: 'Classification', api: 'random-forest' },
     { id: 3, name: 'Logistic Regression', type: 'Classification', api: 'logistic-regression' },
-    { id: 4, name: 'Naive Bayes', type: 'Classification', api: 'naive-bayes' }
+    { id: 4, name: 'Naive Bayes', type: 'Classification', api: 'naive-bayes' },
+    { id: 5, name: 'Gradient Boosting',     type: 'Regression', api: 'gradient-boosting' },
+    { id: 6, name: 'Support Vector Regression', type: 'Regression', api: 'svr' },
+    { id: 7, name: 'Elastic nett', type: 'Regression', api: 'elastic-net' },
+    { id: 8, name: 'Extra trees regressor', type: 'Regression', api: 'extra-trees-regressor' },
+    { id: 9, name: 'kNN', type: 'Regression', api: 'knn' }
   ]
 
   useEffect(() => {
@@ -282,6 +287,24 @@ export default function MachineLearningPage() {
           <StepCard number={2} title="Configure Features & Target" icon={<SlidersIcon className="w-6 h-6" />} isEnabled={isStep2Enabled}>
             <div className="space-y-6">
               <div>
+                <label htmlFor="target-variable" className="block font-semibold text-slate-300 mb-2">
+                  Target Variable
+                </label>
+                <select
+                  id="target-variable"
+                  value={targetVariable}
+                  onChange={e => setTargetVariable(e.target.value)}
+                  className="w-full md:w-1/2 p-2 border border-slate-600 rounded-md bg-slate-800 text-white
+                             focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                >
+                  <option value="">Select Target...</option>
+                  {selectedDataset?.columns?.filter(c => !selectedFeatures.includes(c)).map(column => (
+                    <option key={column} value={column}>{column}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
                 <h3 className="font-semibold text-slate-300 mb-3">Feature Variables</h3>
                 <div className="flex flex-wrap gap-2">
                   {selectedDataset?.columns?.filter(c => c !== targetVariable).map(column => (
@@ -298,24 +321,6 @@ export default function MachineLearningPage() {
                     </button>
                   ))}
                 </div>
-              </div>
-
-              <div>
-                <label htmlFor="target-variable" className="block font-semibold text-slate-300 mb-2">
-                  Target Variable
-                </label>
-                <select
-                  id="target-variable"
-                  value={targetVariable}
-                  onChange={e => setTargetVariable(e.target.value)}
-                  className="w-full md:w-1/2 p-2 border border-slate-600 rounded-md bg-slate-800 text-white
-                             focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
-                >
-                  <option value="">Select Target...</option>
-                  {selectedDataset?.columns?.filter(c => !selectedFeatures.includes(c)).map(column => (
-                    <option key={column} value={column}>{column}</option>
-                  ))}
-                </select>
               </div>
             </div>
           </StepCard>
