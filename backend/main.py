@@ -2,7 +2,6 @@ from fastapi import FastAPI, UploadFile, File, HTTPException, Query, Path, Form,
 from fastapi.middleware.cors import CORSMiddleware
 import fiona
 import psycopg2
-from backend.moran_analysis import compute_morans_i
 from fastapi.responses import JSONResponse
 import pandas as pd
 from pandas import DataFrame
@@ -17,13 +16,13 @@ from pathlib import Path as pt
 
 
 # Import Machine Learning functions
-from backend.linear_regression import run_linear_regression
-from backend.random_forest import run_rf_model
-from backend.logistic_regression import run_logistic_regression
-from backend.naive_bayes import run_naive_bayes
-from backend.asthma_arthimetic_mean import preprocess_gas_data
-from backend.gradient_boosting import run_gradient_boosting
-from backend.svr import run_svr_model
+from backend.machine_learning.linear_regression import run_linear_regression
+from backend.machine_learning.random_forest import run_rf_model
+from backend.machine_learning.logistic_regression import run_logistic_regression
+from backend.machine_learning.naive_bayes import run_naive_bayes
+from backend.machine_learning.asthma_arthimetic_mean import preprocess_gas_data
+from backend.machine_learning.gradient_boosting import run_gradient_boosting
+from backend.machine_learning.svr import run_svr_model
 
 
 app = FastAPI()
@@ -48,90 +47,6 @@ COLUMN_MAPPINGS = {
     "adm1": {"code": "shapeID", "name": "shapeName", "alias": "state"},
     "adm2": {"code": "shapeID", "name": "shapeName", "alias": "county"}
 }
-
-lifetime_df = pd.read_csv("data/lifetime-asthma-prevalence-by-county-2015_2022.csv", encoding='latin1')
-gdf = gpd.read_file("backend/shapefiles/CA_Counties.shp")
-current_df = pd.read_csv("data/current-asthma-prevalence-by-county-2015_2022.csv", encoding='latin1')
-
-#Lifetime
-lifetime_df['YEARS'] = lifetime_df['YEARS'].str.replace('\x96', '-', regex=False)
-lifetime_df['COUNTY'] = lifetime_df['COUNTY'].str.strip().str.title()
-gdf['NAME'] = gdf['NAME'].str.strip().str.title()
-
-#Current
-current_df['YEARS'] = current_df['YEARS'].str.replace('\x96', '-', regex=False)
-current_df = current_df[current_df['AGE GROUP'] == 'All ages']
-current_df = current_df.drop('COUNTIES GROUPED', axis=1, errors='ignore')
-current_df = current_df.drop('COMMENT', axis=1, errors='ignore')
-current_df['COUNTY'] = current_df['COUNTY'].str.strip().str.title()
-    
-        
-# Merge function
-def get_asthma_geodata(dataset: DataFrame,  year: str, target: str = "LIFETIME PREVALENCE"):
-    asthma_year_df = dataset[dataset['YEARS'] == year].copy()
-
-    if asthma_year_df.empty:
-        raise HTTPException(status_code=404, detail=f"No data found for year {year}")
-
-    asthma_year_df[target] = pd.to_numeric(asthma_year_df[target], errors='coerce')
-    merged = gdf.merge(asthma_year_df, left_on='NAME', right_on='COUNTY')
-    merged = merged.dropna(subset=[target])
-    return merged
-
-def compute_morans_i_local(merged: GeoDataFrame, variable: str, year: str):
-    merged = merged.copy()
-    if variable not in merged.columns:
-        raise ValueError(f"Variable '{variable}' not found in the data.")
-    w = Queen.from_dataframe(merged)
-    w.transform = 'R' # pyright: ignore[reportAttributeAccessIssue]
-
-    ser = pd.to_numeric(gdf[variable], errors="coerce")
-    ser = ser.replace([np.inf, -np.inf], np.nan)
-    x: NDArray[np.float64] = np.nan_to_num(ser.to_numpy(dtype=float), nan=0.0)
-
-    moran_local = Moran_Local(x, w)
-
-    merged['local_I'] = moran_local.Is
-    merged['p_value'] = moran_local.p_sim
-    merged['z_score'] = moran_local.z.tolist()
-    
-    # Classify cluster types
-    cluster_labels = []
-    for i, (Ii, sig, q) in enumerate(zip(moran_local.Is, moran_local.p_sim, moran_local.q)):
-        if sig < 0.05:
-            if q == 1:
-                cluster_labels.append('HH')  # High-High
-            elif q == 2:
-                cluster_labels.append('LH')  # Low-High
-            elif q == 3:
-                cluster_labels.append('LL')  # Low-Low
-            elif q == 4:
-                cluster_labels.append('HL')  # High-Low
-            else:
-                cluster_labels.append('Not Significant')
-        else:
-            cluster_labels.append('Not Significant')
-
-    merged['cluster_label'] = cluster_labels    
-
-    if merged.crs is None:
-        merged.set_crs(epsg=3310, inplace=True)
-    merged = merged.to_crs(epsg=4326)
-
-    output = merged.to_json()
-    output = json.loads(output)
-    name = ""
-    
-    if variable == "LIFETIME PREVALENCE":
-        name = "lifetime"
-    else:
-        name = "current"
-        
-    os.makedirs("frontend/public/geojsons", exist_ok=True)
-
-    with open(f"frontend/public/geojsons/{name}-{year}.geojson", "w") as f:
-        output = json.dump(output, f, indent=4)
-    return True
 
 
 def assign_weights(gdf: GeoDataFrame, wtype: str, k: int | None):
@@ -320,36 +235,10 @@ def get_db_connection():
     )
 
 
-def get_all_geojson(current_df, lifetime_df, gdf):
-    years = ['2015-2016', '2017-2018', '2019-2020', '2021-2022']
-    for year in years:
-        merged_curr = get_asthma_geodata(current_df, year, "CURRENT PREVALENCE")
-        compute_morans_i_local(merged_curr, 'CURRENT PREVALENCE', year)
-        merged_life = get_asthma_geodata(lifetime_df, year, "LIFETIME PREVALENCE")
-        compute_morans_i_local(merged_life, 'LIFETIME PREVALENCE', year)
-    
-    return True
-
-
-
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
 
-@app.get("/get_geojson")
-async def run_moran():
-    """
-    Get's all the GeoJSON files for lifetime, current and all years
-    """
-    try:
-        result = get_all_geojson(current_df, lifetime_df, gdf)
-        return result
-    
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
     
 @app.post("/lisa/{file_id}")
 async def run_lisa(
@@ -368,10 +257,53 @@ async def run_lisa(
     # analysis options
     wtype: str = Form("queen"),
     k: int | None = Form(None),
-    perm: int = Form(999),
+    perm: int = Form(499),
     alpha: float = Form(0.05),
     simplify_tol: float | None = Form(0.01),
 ):
+    """
+    This function performs LISA analysis on the provided data and returns the results.
+    Args:
+        - file_id (required): ID of the CSV file to run LISA on
+        - level (required): Spatial level for analysis 
+            - adm0 -> Countries
+            - adm1 -> State/Provinces
+            - adm2 -> Counties/Districts
+        - variable (required): Numeric column to analyze
+            - Column must be numeric, preprocessing may be required if the column is not numeric
+        - join_by: Method to join the data by:
+            - Code: ISO3 naming format (e.g. "USA", "MYR", "SGD")
+            - Name: Name of the region (e.g. "California", "Texas", "San Benito")
+            - Point: Longitude and Latitude coordinates (e.g. "lon", "lat")
+        - join_key (required if join_by = code): Key for joining the data
+            - Column name to act as a join_key
+        - country_iso3: ISO3 code for country (recommended for ADM2)
+            - Acts as a pre-filter to speed up the join process by reducing the number of features to match based on the location of the data
+        - country_col (required for adm0 and adm1): Name of the Country column in the CSV
+        - state_col (required for adm1, optional for adm0): Name of the State column in the CSV
+        - county_col (required for adm2): Name of the County column in the CSV
+        - lon_col (required for join_by=point): Name of longitude column in the CSV
+        - lat_col (required for join_by=point): Name of latitude column in the CSV
+        - wtype (default="queen"): Type of weights to use.
+            - queen: Includes all neighboring polygons (contiguity-based)
+            - rook: Includes only shared borders (contiguity-based)
+            - knn: Includes k-nearest neighbors (distance-based)
+        - k (required if wtype=knn): Number of neighbors to consider
+        - perm (default=499): Number of permutations for significance testing
+        - alpha (default=0.05): Significance level for testing
+        - simplify_tol: Douglas-Peucker tolerance in degrees to simplify polygons for speedup
+
+    Raises:
+        HTTPException: If the level is invalid.
+        HTTPException: If the required columns are missing.
+        HTTPException: If the CRS is not set.
+        HTTPException: If the join fails.
+        HTTPException: If the analysis fails.
+
+    Returns:
+        GeoJson: GeoJson of spatial analysis results
+
+    """
     
     df = retrieve_csv_table(file_id)
     level = level.lower()
@@ -433,74 +365,12 @@ async def run_lisa(
     cols = ["code", alias, variable, "local_I", "p_value", "cluster_label", "geometry"]
     geojson = result[cols].to_json()
     
-    output_pt = pt(f"frontend/public/geojsons/lisa-{file_id}.geojson")
+    output_pt = pt(f"frontend/public/geojsons/lisa-{file_id}-{wtype}.geojson")
     output_pt.parent.mkdir(parents=True, exist_ok=True)
     output_pt.write_text(geojson, encoding="utf-8")
     
     return Response(content=geojson, media_type="application/geo+json")
     
-# @app.get("/moran_local")
-# async def run_moran_local(variable: str = Query(..., description="Variable for Moran's I analysis"), year: str = Query(..., description="Year for asthma data")):
-#     """
-#     Run Local Moran's I analysis on the specified variable.
-#     """
-#     try:
-#         merged = get_asthma_geodata(year=year, target=variable)
-#         result = compute_morans_i_local(merged, variable, year)
-#         return JSONResponse(content=result)
-    
-#     except ValueError as e:
-#         raise HTTPException(status_code=400, detail=str(e))
-    
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
-    
-@app.get("/moran_local/{file_id}")
-async def run_moran_local(variable: str = Query(..., description="Variable for Moran's I analysis"), year: str = Query(..., description="Year for asthma data"), file_id: int = Path(..., description="ID of the uploaded CSV file")):
-    """
-    Run Local Moran's I analysis on the specified variable.
-    """
-    try:
-        file = retrieve_csv_table(file_id)
-        merged = get_asthma_geodata(file, year, variable)
-        result = compute_morans_i_local(merged, variable, year)
-        return JSONResponse(content=result)
-    
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    
-
-@app.get("/testing")
-async def test_endpoint():
-    # List all layers inside the .gpkg
-    path = GPKG_PATHS["adm0"]
-    print("Layers:", fiona.listlayers(path))
-
-    # Open a specific layer and see columns, dtypes, sample rows, CRS
-    layer = fiona.listlayers(path)[0]  # or the exact layer name
-    gdf = gpd.read_file(path, layer=layer)
-
-    print("Columns:", list(gdf.columns))
-    print("\nDtypes:\n", gdf.dtypes)
-    print("\nCRS:", gdf.crs)
-    print("\nFirst 5 rows:\n", gdf.head())
-
-@app.get("/get_coordinates")
-async def get_coordinates():
-    """
-    Get coordinates of the counties in the shapefile.
-    """
-    try:
-        return {
-            "County": gdf["NAME"].tolist(),
-            "Latitude": gdf["INTPTLAT"].tolist(),
-            "Longitude": gdf["INTPTLON"].tolist()
-            }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
