@@ -71,7 +71,7 @@ def run_rf_model(data, feature_cols, target_col='CURRENT_PREVALENCE'):
     rf = RandomForestRegressor(random_state=42)
     cv = KFold(n_splits=5, shuffle=True, random_state=42)
     cv_scores = cross_val_score(rf, X, y, cv=cv, scoring="r2")
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42) #play around with the test size
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42) #play around with the test size
     model = RandomForestRegressor(random_state=42)
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
