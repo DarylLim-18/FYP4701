@@ -3,6 +3,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import GridSearchCV, train_test_split
 
 
 def load_data():
@@ -96,13 +97,27 @@ def run_logistic_regression(data, feature_cols, target_col='CURRENT PREVALENCE',
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
 
-    from sklearn.model_selection import train_test_split
     X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
 
-    model = LogisticRegression()
+    param_grid = {
+        "C": [0.01, 0.1, 1, 10, 100],           
+        "penalty": ["l1", "l2"],                
+        "solver": ["liblinear", "saga"]         
+    }
+
+    #Essentially helps with finding the optimal parameter values from the set of parameters.
+    grid = GridSearchCV(LogisticRegression(max_iter=5000), param_grid, cv=5, scoring="accuracy", n_jobs=-1, verbose=1)
+    grid.fit(X_train, y_train)
+
+    print("\n--- Best Hyperparameters ---")
+    print(grid.best_params_)
+    print("Best Mean CV Accuracy:", grid.best_score_)
+
+    model = grid.best_estimator_
     model.fit(X_train, y_train)
 
     y_pred = model.predict(X_test)
+    y_proba = model.predict_proba(X_test)[:, 1]
 
     acc = accuracy_score(y_test, y_pred)
     cm = confusion_matrix(y_test, y_pred)
