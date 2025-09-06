@@ -35,7 +35,7 @@ export default function AnalysisPage() {
 
   return (
     <div className="bg-slate-800/50 rounded-2xl shadow-2xl p-6 md:p-8 border border-slate-700 backdrop-blur-sm text-white">
-      <h1 className="text-4xl md:text-4xl font-extrabold mb-6 text-white tracking-tight">
+      <h1 className="text-4xl md:text-4xl font-extrabold mb-10 text-white tracking-tight">
         Asthma Arithmetic Mean Analysis (2015 – 2022)
       </h1>
 
@@ -45,11 +45,13 @@ export default function AnalysisPage() {
         <select
           value={selectedCounty}
           onChange={(e) => setSelectedCounty(e.target.value)}
-          className="bg-slate-800/50 rounded-2xl shadow-2xl p-4 md:p-2 border border-slate-700 backdrop-blur-sm text-white hover:border-slate-500 hover:bg-slate-700/50"
+          className="rounded-2xl shadow-2xl p-4 md:p-2 border border-slate-600 bg-slate-800 text-white
+                             hover:border-slate-800 hover:bg-slate-700/50"
         >
           <option value="All">All</option>
           {allCounties.map(county => (
-            <option key={county} value={county}>
+            <option key={county} value={county}
+            className= 'bg-slate-800 text-white hover:bg-slate-700'>
               {county}
             </option>
           ))}
