@@ -12,3 +12,4 @@ scikit-learn
 matplotlib
 torch
 torch_geometric
+psycopg2
