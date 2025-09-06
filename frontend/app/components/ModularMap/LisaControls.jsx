@@ -158,12 +158,12 @@ export default function LisaControls({
                                             />
                                             {errors.countyCol && <Warn text={errors.countyCol} />}
 
-                                            {/* <HeaderSelect
+                                            <HeaderSelect
                                                 label="State Column (Optional but recommended)"
                                                 headers={headers}
                                                 value={form.stateCol}
                                                 onChange={(v) => setForm((p) => ({ ...p, stateCol: v }))}
-                                            /> */}
+                                            />
 
                                             <div className="space-y-2">
                                                 <label className="text-xs font-medium text-gray-300">
