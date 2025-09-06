@@ -1,6 +1,6 @@
 "use client";
 
-import { FiAlertCircle, FiBarChart2, FiMap, FiPlay } from "react-icons/fi";
+import { FiAlertCircle, FiBarChart2, FiCompass, FiMap, FiPlay } from "react-icons/fi";
 import HeaderSelect from "./HeaderSelect";
 import RadioGroup from "./RadioGroup";
 import Slider from "./Slider";
@@ -168,7 +168,7 @@ export default function LisaControls({
 
                                             <div className="space-y-2">
                                                 <label className="text-xs font-medium text-gray-300">
-                                                    country_iso3 (Recommended)
+                                                    Country Code (ISO3) (Recommended)
                                                 </label>
                                                 <div className="relative">
                                                     <input
@@ -178,15 +178,7 @@ export default function LisaControls({
                                                         placeholder="e.g., USA, MYS, IND"
                                                         className="w-full rounded-lg bg-slate-800/60 border border-white/20 px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500/30 transition-all"
                                                     />
-                                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-                                                        <FiMap className="w-4 h-4" />
-                                                    </div>
                                                 </div>
-                                                {showAdm2NameHints && (
-                                                    <p className="text-xs text-emerald-300">
-                                                        Tip: Providing country_iso3 and state_col reduces name collisions.
-                                                    </p>
-                                                )}
                                             </div>
                                         </>
                                     )}

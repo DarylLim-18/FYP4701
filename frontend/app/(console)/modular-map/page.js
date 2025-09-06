@@ -35,7 +35,7 @@ export default function ModularMapPage() {
   k: "",                // only for knn
   perm: 999,
   alpha: 0.05,
-  simplifyTol: defaultSimplifyForLevel("adm2"),
+  simplifyTol: defaultSimplifyForLevel("adm2"), // using adm 2 for now
 });
 
   useEffect(() => {

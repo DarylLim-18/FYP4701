@@ -65,9 +65,9 @@ export default function VariableSelect({ fileId, value, onChange }) {
         </select>
       )}
 
-      {/* Optional helper note
-      <p className="text-[11px] text-gray-400">
-        Tip: Select a column
+      {/* Optional helper note */}
+      {/* <p className="text-[11px] text-gray-400">
+        Tip: Select a column that has numeric values to analyze
       </p> */}
     </div>
   );

@@ -18,9 +18,9 @@ export function normalizeISO3(v) {
 
 /** Suggested polygon simplify tolerance per level */
 export function defaultSimplifyForLevel(level) {
-  if (level === "adm2") return 0.003; // ~0.002–0.005
-  if (level === "adm1") return 0.015; // ~0.01–0.02
-  return 0.08;                        // ~0.05–0.1 for adm0
+  if (level === "adm2") return 0.01; 
+  if (level === "adm1") return 0.015;
+  return 0.08;
 }
 
 /** Compact LISA summary from a GeoJSON FeatureCollection */
