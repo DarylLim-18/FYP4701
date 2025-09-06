@@ -163,6 +163,7 @@ export default function LisaControls({
                                                 headers={headers}
                                                 value={form.stateCol}
                                                 onChange={(v) => setForm((p) => ({ ...p, stateCol: v }))}
+                                                allowNone // to allow null values
                                             />
 
                                             <div className="space-y-2">

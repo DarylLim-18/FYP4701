@@ -17,22 +17,26 @@ export default function ModularMapPage() {
   const [savedUrl, setSavedUrl] = useState(null);
 
   const [form, setForm] = useState({
-    level: "adm2",
-    joinBy: "code",
-    variable: "",
-    joinKey: "",
-    countryIso3: "",
-    countryCol: "country",
-    stateCol: "state",
-    countyCol: "county",
-    lonCol: "lon",
-    latCol: "lat",
-    wtype: "queen",
-    k: "",
-    perm: 499,
-    alpha: 0.05,
-    simplifyTol: defaultSimplifyForLevel("adm2"),
-  });
+  level: "adm2",
+  joinBy: "name",
+  variable: "",
+
+  // join fields
+  joinKey: "",          // required only for join_by=code
+  countryIso3: "",      // optional (recommended for adm2)
+  countryCol: "",       // required for adm0/adm1 only
+  stateCol: "",         // required for adm1; optional for adm2
+  countyCol: "",        // required for adm2
+  lonCol: "",           // required only for join_by=point
+  latCol: "",
+
+  // analysis
+  wtype: "rook",
+  k: "",                // only for knn
+  perm: 999,
+  alpha: 0.05,
+  simplifyTol: defaultSimplifyForLevel("adm2"),
+});
 
   useEffect(() => {
     if (!selectedFile?.id) { setHeaders([]); return; }
@@ -51,8 +55,19 @@ export default function ModularMapPage() {
   }, [selectedFile?.id]);
 
   useEffect(() => {
-    setForm((p) => ({ ...p, simplifyTol: defaultSimplifyForLevel(p.level) }));
-  }, [form.level]);
+  setForm(p => ({
+    ...p,
+    // clear everything not used by the current choice
+    joinKey: p.joinBy === "code" ? p.joinKey : "",
+    lonCol:  p.joinBy === "point" ? p.lonCol : "",
+    latCol:  p.joinBy === "point" ? p.latCol : "",
+    // name-join specifics per level
+    countryCol: p.joinBy === "name" && (p.level === "adm0" || p.level === "adm1") ? p.countryCol : "",
+    stateCol:   p.joinBy === "name" && (p.level === "adm1" || p.level === "adm2") ? p.stateCol : "",
+    countyCol:  p.joinBy === "name" && p.level === "adm2" ? p.countyCol : "",
+  }));
+}, [form.joinBy, form.level]);
+
 
   const errors = useMemo(() => {
     const e = {};
