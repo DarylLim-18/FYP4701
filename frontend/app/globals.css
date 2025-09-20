@@ -130,3 +130,15 @@ body {
     opacity: 1;
   }
 }
+
+html, body, :root { height: 100%; }
+
+/* Keep Leaflet UI below full-screen overlays/modals */
+.leaflet-container .leaflet-top,
+.leaflet-container .leaflet-bottom {
+  z-index: 400;
+}
+
+.leaflet-container .leaflet-control {
+  z-index: 300;
+}
