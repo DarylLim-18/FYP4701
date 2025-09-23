@@ -13,3 +13,4 @@ matplotlib
 torch
 torch_geometric
 psycopg2
+dotenv
