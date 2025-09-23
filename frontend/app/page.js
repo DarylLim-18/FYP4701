@@ -1,5 +1,6 @@
 'use client'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { FaLungs } from 'react-icons/fa'
 import "./app.css"
 import React, { useEffect, useState } from "react";
@@ -128,7 +129,29 @@ const BenefitItem = ({ title, description, delay = 0 }) => {
 };
 
 const Home = () => {
+    const router = useRouter();
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+    const [isCheckingLaunch, setIsCheckingLaunch] = useState(true);
+    const [showLanding, setShowLanding] = useState(false);
+
+    useEffect(() => {
+        // Gate landing page so it only appears on the first visit per browser
+        if (typeof window === 'undefined') {
+            return;
+        }
+
+        const hasVisited = window.localStorage.getItem('hasVisitedLanding');
+
+        if (hasVisited) {
+            router.replace('/dashboard');
+            setShowLanding(false);
+        } else {
+            window.localStorage.setItem('hasVisitedLanding', 'true');
+            setShowLanding(true);
+        }
+
+        setIsCheckingLaunch(false);
+    }, [router]);
 
     useEffect(() => {
         const handleMouseMove = (e) => {
@@ -140,8 +163,12 @@ const Home = () => {
     }, []);
 
     const handleGetStarted = () => {
-        window.location.href = '/dashboard';
+        router.push('/dashboard');
     };
+
+    if (isCheckingLaunch || !showLanding) {
+        return null;
+    }
 
     return (
         <div className="landing-page">

@@ -7,6 +7,7 @@ export default function HeaderSelect({
   onChange,
   placeholder = "Choose a column…",
   allowNone = false,
+  disabled = false,
 }) {
   return (
     <div className="space-y-2">
@@ -14,7 +15,8 @@ export default function HeaderSelect({
       <select
         value={value ?? ""}
         onChange={(e) => onChange?.(e.target.value)}
-        className="w-full rounded-lg bg-slate-800 border border-white/10 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+        disabled={disabled}
+        className="w-full rounded-lg bg-slate-800 border border-white/10 text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/40 disabled:opacity-50"
       >
         {allowNone
           ? <option value="">None</option>

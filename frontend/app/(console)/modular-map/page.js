@@ -17,26 +17,26 @@ export default function ModularMapPage() {
   const [savedUrl, setSavedUrl] = useState(null);
 
   const [form, setForm] = useState({
-  level: "adm2",
-  joinBy: "name",
-  variable: "",
+    level: "adm2",
+    joinBy: "name",
+    variable: "",
 
-  // join fields
-  joinKey: "",          // required only for join_by=code
-  countryIso3: "",      // optional (recommended for adm2)
-  countryCol: "",       // required for adm0/adm1 only
-  stateCol: "",         // required for adm1; optional for adm2
-  countyCol: "",        // required for adm2
-  lonCol: "",           // required only for join_by=point
-  latCol: "",
+    // join fields
+    joinKey: "",          // required only for join_by=code
+    countryIso3: "",      // optional (recommended for adm2)
+    countryCol: "",       // required for adm0/adm1 only
+    stateCol: "",         // required for adm1; optional for adm2
+    countyCol: "",        // required for adm2
+    lonCol: "",           // required only for join_by=point
+    latCol: "",
 
-  // analysis
-  wtype: "rook",
-  k: "",                // only for knn
-  perm: 999,
-  alpha: 0.05,
-  simplifyTol: defaultSimplifyForLevel("adm2"), // using adm 2 for now
-});
+    // analysis
+    wtype: "rook",
+    k: "",                // only for knn
+    perm: 999,
+    alpha: 0.05,
+    simplifyTol: defaultSimplifyForLevel("adm2"), // using adm 2 for now
+  });
 
   useEffect(() => {
     if (!selectedFile?.id) { setHeaders([]); return; }
@@ -45,8 +45,8 @@ export default function ModularMapPage() {
         const res = await fetch(`${BASE_URL}/files/${selectedFile.id}/headers`);
         const data = await res.json();
         const cols = Array.isArray(data?.columns) ? data.columns
-                   : Array.isArray(data?.headers) ? data.headers
-                   : Array.isArray(data) ? data : [];
+          : Array.isArray(data?.headers) ? data.headers
+            : Array.isArray(data) ? data : [];
         setHeaders(cols);
       } catch {
         setHeaders([]);
@@ -55,18 +55,18 @@ export default function ModularMapPage() {
   }, [selectedFile?.id]);
 
   useEffect(() => {
-  setForm(p => ({
-    ...p,
-    // clear everything not used by the current choice
-    joinKey: p.joinBy === "code" ? p.joinKey : "",
-    lonCol:  p.joinBy === "point" ? p.lonCol : "",
-    latCol:  p.joinBy === "point" ? p.latCol : "",
-    // name-join specifics per level
-    countryCol: p.joinBy === "name" && (p.level === "adm0" || p.level === "adm1") ? p.countryCol : "",
-    stateCol:   p.joinBy === "name" && (p.level === "adm1" || p.level === "adm2") ? p.stateCol : "",
-    countyCol:  p.joinBy === "name" && p.level === "adm2" ? p.countyCol : "",
-  }));
-}, [form.joinBy, form.level]);
+    setForm(p => ({
+      ...p,
+      // clear everything
+      joinKey: p.joinBy === "code" ? p.joinKey : "",
+      lonCol: p.joinBy === "point" ? p.lonCol : "",
+      latCol: p.joinBy === "point" ? p.latCol : "",
+      // name-join specifics per level
+      countryCol: p.joinBy === "name" && (p.level === "adm0" || p.level === "adm1") ? p.countryCol : "",
+      stateCol: p.joinBy === "name" && (p.level === "adm1" || p.level === "adm2") ? p.stateCol : "",
+      countyCol: p.joinBy === "name" && p.level === "adm2" ? p.countyCol : "",
+    }));
+  }, [form.joinBy, form.level]);
 
 
   const errors = useMemo(() => {
@@ -98,7 +98,6 @@ export default function ModularMapPage() {
 
   const canRun = Object.keys(errors).length === 0;
 
-  // Pick a reasonable label column for hover info on the map
   const displayColumn = useMemo(() => {
     if (form.joinBy === "name") {
       if (form.level === "adm2") return form.countyCol || "county";
@@ -165,20 +164,15 @@ export default function ModularMapPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
-      <main className="pt-8 px-8">
-        <div className="grid grid-cols-4 gap-6">
+    <div className="h-full overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
+      <main className="h-full grid grid-cols-1 lg:grid-cols-4 gap-6 p-6 overflow-hidden">
+        {/* Controls */}
+        <div className="min-h-0">
           <LisaControls
             pickerOpen={pickerOpen}
             setPickerOpen={setPickerOpen}
             selectedFile={selectedFile}
-            setSelectedFile={(f) => {
-              setSelectedFile(f);
-              setGeojson(null);
-              setRunError(null);
-              setSavedUrl(null);
-              setForm((p) => ({ ...p, variable: "" }));
-            }}
+            setSelectedFile={setSelectedFile}
             headers={headers}
             form={form}
             setForm={setForm}
@@ -187,34 +181,34 @@ export default function ModularMapPage() {
             submitting={submitting}
             onRun={handleRun}
           />
+          <DatasetPickerModal
+            open={pickerOpen}
+            onClose={() => setPickerOpen(false)}
+            onSelect={(f) => {
+              setSelectedFile(f);
+              setPickerOpen(false);
+            }}
+          />
 
-          <section className="md:col-span-3 h-[calc(100vh-5rem)] bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl shadow-xl overflow-hidden relative">
-            <div className="h-full p-4">
-              <ResultsPanel
-                geojson={geojson}
-                savedUrl={savedUrl}
-                loading={submitting}
-                variable={form.variable || "Avg PM2.5"}
-                columnName={displayColumn || "county"}
-              />
-              {runError && <p className="mt-3 text-xs text-red-300">{runError}</p>}
-            </div>
-          </section>
         </div>
-      </main>
 
-      <DatasetPickerModal
-        open={pickerOpen}
-        onClose={() => setPickerOpen(false)}
-        onSelect={(f) => {
-          setSelectedFile(f);
-          setPickerOpen(false);
-          setGeojson(null);
-          setRunError(null);
-          setSavedUrl(null);
-          setForm((p) => ({ ...p, variable: "" }));
-        }}
-      />
+        {/* Map panel */}
+        <section className="lg:col-span-3 min-h-0 bg-white/5 border border-white/10 rounded-2xl shadow-xl overflow-hidden">
+          <ResultsPanel
+            geojson={geojson}
+            savedUrl={savedUrl}
+            loading={submitting}
+            variable={form.variable || "value"}
+            columnName={
+              form.joinBy === "name"
+                ? (form.level === "adm2" ? (form.countyCol || "county")
+                  : form.level === "adm1" ? (form.stateCol || "state")
+                    : (form.countryCol || "country"))
+                : (form.joinKey || form.stateCol || "name")
+            }
+          />
+        </section>
+      </main>
     </div>
   );
 }
