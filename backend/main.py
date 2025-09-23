@@ -2,6 +2,7 @@ from fastapi import FastAPI, UploadFile, File, HTTPException, Query, Path, Form,
 from fastapi.middleware.cors import CORSMiddleware
 import fiona
 import psycopg2
+from psycopg2.extras import Json
 from fastapi.responses import JSONResponse
 import pandas as pd
 from pandas import DataFrame
@@ -228,6 +229,31 @@ def local_moran(
     out["cluster_label"] = labels
 
     return out
+
+def upsert_cache(cache_id: int, cache_name: str, geojson_obj: dict):
+    conn = psycopg2.connect(
+        dbname="postgres",
+        user="postgres",
+        password="hanikodi4701!",   # move to env var
+        host="localhost",
+        port="5432"
+    )
+    try:
+        with conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO cache (cache_id, cache_name, cache_data)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (cache_id) DO UPDATE
+                  SET cache_name = EXCLUDED.cache_name,
+                      cache_data = EXCLUDED.cache_data,
+                      updated_time = now();
+                """,
+                (cache_id, cache_name, Json(geojson_obj))
+            )
+    finally:
+        conn.close()
+
 load_dotenv()
 
 DB_NAME = os.environ["DB_NAME"]
@@ -373,10 +399,8 @@ async def run_lisa(
 
     cols = ["code", alias, variable, "local_I", "p_value", "cluster_label", "geometry"]
     geojson = result[cols].to_json()
-    
-    output_pt = pt(f"frontend/public/geojsons/lisa-{file_id}-{wtype}.geojson")
-    output_pt.parent.mkdir(parents=True, exist_ok=True)
-    output_pt.write_text(geojson, encoding="utf-8")
+    geojson_obj = json.loads(geojson)
+    upsert_cache(1, "lisa-latest.geojson", geojson_obj)
     
     return Response(content=geojson, media_type="application/geo+json")
     
@@ -409,6 +433,36 @@ async def upload_file(file: UploadFile = File(...)):
     except Exception as e:
         print("Error uploading file:", str(e))  # LOG TO TERMINAL
         raise HTTPException(status_code=500, detail=str(e))
+    
+
+# cache/1       
+
+@app.get("/cache/{cache_id}")
+def get_cache(cache_id: int = Path(..., ge=1)):
+    conn = psycopg2.connect(
+        dbname="postgres", 
+        user="postgres", 
+        password="hanikodi4701!",
+        host="localhost",
+        port="5432"
+    )
+    try:
+        with conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT cache_name, cache_data FROM cache WHERE cache_id=%s
+                """, 
+                (cache_id,))
+            row = cur.fetchone()
+            if not row:
+                raise HTTPException(status_code=404, detail="Cache not found")
+            cache_name, cache_data = row
+            return Response(content=json.dumps(cache_data), media_type="application/geo+json")
+    except:
+        return Response(content=None)
+    finally:
+        conn.close()
+
 
 
 @app.delete("/delete/{file_id}")
