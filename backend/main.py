@@ -437,8 +437,8 @@ async def upload_file(file: UploadFile = File(...)):
 
 # cache/1       
 
-@app.get("/cache/{cache_id}")
-def get_cache(cache_id: int = Path(..., ge=1)):
+@app.get("/cache")
+def get_cache():
     conn = psycopg2.connect(
         dbname="postgres", 
         user="postgres", 
@@ -452,7 +452,7 @@ def get_cache(cache_id: int = Path(..., ge=1)):
                 """
                 SELECT cache_name, cache_data FROM cache WHERE cache_id=%s
                 """, 
-                (cache_id,))
+                (1,))
             row = cur.fetchone()
             if not row:
                 raise HTTPException(status_code=404, detail="Cache not found")
