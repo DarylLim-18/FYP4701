@@ -14,6 +14,7 @@ import numpy as np
 from numpy.typing import NDArray
 import io, json, os, unicodedata
 from pathlib import Path as pt
+from dotenv import load_dotenv
 
 
 # Import Machine Learning functions
@@ -310,14 +311,21 @@ def local_moran(
     out["cluster_label"] = labels
 
     return out
+load_dotenv()
+
+DB_NAME = os.environ["DB_NAME"]
+DB_USER = os.environ["DB_USER"]
+DB_PASS = os.environ["DB_PASS"]
+DB_HOST = os.environ["DB_HOST"]
+DB_PORT = int(os.environ["DB_PORT"])
 
 def get_db_connection():
     return psycopg2.connect(
-        dbname="postgres",
-        user="postgres",
-        password="hanikodi4701!",
-        host="localhost",
-        port="5432"
+        dbname=DB_NAME,
+        user=DB_USER,
+        password=DB_PASS,
+        host=DB_HOST,
+        port=DB_PORT
     )
 
 
