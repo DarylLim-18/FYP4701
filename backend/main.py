@@ -322,8 +322,6 @@ async def run_lisa(
     
     missing = None
     for char in (bcode, bname):
-        print(char)
-        print(gdf.columns)
         if char not in gdf.columns:
             missing = char
     
