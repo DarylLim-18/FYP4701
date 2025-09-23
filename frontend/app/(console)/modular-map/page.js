@@ -39,6 +39,19 @@ export default function ModularMapPage() {
   });
 
   useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`${BASE_URL}/cache/${selectedFile.id}/headers`);
+        const data = await res.json();
+        const cols = Array.isArray(data?.columns) ? data.columns
+          : Array.isArray(data?.headers) ? data.headers
+            : Array.isArray(data) ? data : [];
+        setHeaders(cols);
+      } catch {
+        setHeaders([]);
+      }
+    })();
+
     if (!selectedFile?.id) { setHeaders([]); return; }
     (async () => {
       try {

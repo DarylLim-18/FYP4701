@@ -12,10 +12,25 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
-const POSITIVE_COLORS = ["#FFEDA0", "#FED976", "#FEB24C", "#FD8D3C", "#E31A1C", "#800026"];
-const NEGATIVE_COLORS = ["#08519C", "#3182BD", "#6BAED6", "#BDD7E7"];
+const POSITIVE_COLORS = [
+"#f2fdaa",
+"#efed8c",
+"#eedc6f",
+"#efca53",
+"#f1b639",
+"#f4a11f",
+"#f78a00",
+"#fb6f00",
+"#fd4d00",
+"#ff0808ff"
+];
+const NEGATIVE_COLORS = [
+"#1b9ae4",
+"#00bddd",
+"#41d9c3",
+"#9feeac"
+];
 const DEFAULT_COLOR = "#FFEDA0";
-
 const numberFormatter = new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 });
 
 function colorFromScale(value, start, end, colors) {
