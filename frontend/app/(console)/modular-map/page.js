@@ -68,6 +68,12 @@ export default function ModularMapPage() {
     }));
   }, [form.joinBy, form.level]);
 
+  useEffect(() => {
+    (async () => {
+      const data = await (await fetch(`${BASE_URL}/cache`)).json();
+      if (data) setGeojson(data);
+    })();
+  }, []);
 
   const errors = useMemo(() => {
     const e = {};

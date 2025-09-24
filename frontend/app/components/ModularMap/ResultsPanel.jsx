@@ -6,6 +6,7 @@ import { FiMap, FiExternalLink } from "react-icons/fi";
 const LocalGeoJsonMap = dynamic(() => import("./LocalGeoJsonMap"), { ssr: false });
 
 export default function ResultsPanel({ geojson, savedUrl, loading, variable, columnName }) {
+  
   if (loading) {
     return <div className="relative h-full rounded-xl shimmer" />;
   }
