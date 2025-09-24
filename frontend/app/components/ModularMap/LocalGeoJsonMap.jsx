@@ -168,45 +168,73 @@ function GeoJsonLayer({ data, variable, min, max, setHoverProps }) {
   return data ? <GeoJSON data={data} style={styleFn} onEachFeature={onEach} /> : null;
 }
 
-export default function LocalGeoJsonMap({ path, variable, columnName, center = [37.1841, -119.4696], zoom = 6, onLoaded }) {
+function computeMinMax(gj, variable) {
+
+  let maxVal = Number.NEGATIVE_INFINITY;
+  let minVal = Number.POSITIVE_INFINITY;
+  for (const f of gj?.features ?? []) {
+    const v = Number(f?.properties?.[variable]);
+    if (Number.isFinite(v)) {
+      if (v > maxVal) maxVal = v;
+      if (v < minVal) minVal = v;
+    }
+  }
+  return {
+    min: Number.isFinite(minVal) ? minVal : 0,
+    max: Number.isFinite(maxVal) ? maxVal : 0,
+  };
+
+}
+// export default function LocalGeoJsonMap({ path, data: dataProp, variable, columnName, center = [37.1841, -119.4696], zoom = 6, onLoaded }) {
+export default function LocalGeoJsonMap({ data: dataProp, variable, columnName, center = [37.1841, -119.4696], zoom = 6, onLoaded }) {
   const [data, setData] = useState(null);
   const [hoverProps, setHoverProps] = useState(null);
   const [max, setMax] = useState(0);
   const [min, setMin] = useState(0);
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch(path);
-        const gj = await res.json();
-        if (!cancelled) {
-          setData(gj);
-          onLoaded?.(gj);
+    if(!dataProp)
+      return;
+    setData(dataProp);
+    onLoaded?.(dataProp);
+    const {min, max} = computeMinMax(dataProp, variable);
+    setMin(min);
+    setMax(max);
+  }, [dataProp, variable, onLoaded]);
 
-          let maxVal = Number.NEGATIVE_INFINITY;
-          let minVal = Number.POSITIVE_INFINITY;
-          for (const f of gj?.features ?? []) {
-            const v = Number(f?.properties?.[variable]);
-            if (Number.isFinite(v)) {
-              if (v > maxVal) maxVal = v;
-              if (v < minVal) minVal = v;
-            }
-          }
-          if (!Number.isFinite(maxVal) && !Number.isFinite(minVal)) {
-            setMax(0);
-            setMin(0);
-          } else {
-            setMax(Number.isFinite(maxVal) ? maxVal : 0);
-            setMin(Number.isFinite(minVal) ? minVal : 0);
-          }
-        }
-      } catch (e) {
-        console.error("Failed to load GeoJSON:", e);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [path, variable, onLoaded]);
+  // useEffect(() => {
+  //   let cancelled = false;
+  //   (async () => {
+  //     try {
+  //       const res = await fetch(path);
+  //       const gj = await res.json();
+  //       if (!cancelled) {
+  //         setData(gj);
+  //         onLoaded?.(gj);
+
+  //         let maxVal = Number.NEGATIVE_INFINITY;
+  //         let minVal = Number.POSITIVE_INFINITY;
+  //         for (const f of gj?.features ?? []) {
+  //           const v = Number(f?.properties?.[variable]);
+  //           if (Number.isFinite(v)) {
+  //             if (v > maxVal) maxVal = v;
+  //             if (v < minVal) minVal = v;
+  //           }
+  //         }
+  //         if (!Number.isFinite(maxVal) && !Number.isFinite(minVal)) {
+  //           setMax(0);
+  //           setMin(0);
+  //         } else {
+  //           setMax(Number.isFinite(maxVal) ? maxVal : 0);
+  //           setMin(Number.isFinite(minVal) ? minVal : 0);
+  //         }
+  //       }
+  //     } catch (e) {
+  //       console.error("Failed to load GeoJSON:", e);
+  //     }
+  //   })();
+  //   return () => { cancelled = true; };
+  // }, [path, variable, onLoaded]);
 
   const label = useMemo(() => labelFromProps(hoverProps, columnName), [hoverProps, columnName]);
   const val = useMemo(() => {

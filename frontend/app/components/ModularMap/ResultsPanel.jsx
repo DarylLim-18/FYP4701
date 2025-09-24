@@ -2,7 +2,6 @@
 
 import dynamic from "next/dynamic";
 import { FiMap, FiExternalLink } from "react-icons/fi";
-import { computeLisaStats } from "./utils";
 
 const LocalGeoJsonMap = dynamic(() => import("./LocalGeoJsonMap"), { ssr: false });
 
@@ -11,7 +10,7 @@ export default function ResultsPanel({ geojson, savedUrl, loading, variable, col
     return <div className="relative h-full rounded-xl shimmer" />;
   }
 
-  if (!savedUrl) {
+  if (!geojson) {
     return (
       <div className="h-full flex items-center justify-center">
         <div className="text-center space-y-3">
@@ -22,8 +21,6 @@ export default function ResultsPanel({ geojson, savedUrl, loading, variable, col
     );
   }
 
-  const stats = geojson ? computeLisaStats(geojson) : null;
-
   return (
     <div className="h-full flex flex-col min-h-0">
       <div className="flex items-center justify-between px-3 py-2 text-xs text-gray-300 border-b border-white/10 shrink-0">
@@ -33,9 +30,8 @@ export default function ResultsPanel({ geojson, savedUrl, loading, variable, col
         </a>
       </div>
 
-      {/* Map */}
       <div className="flex-1 min-h-0">
-        <LocalGeoJsonMap path={savedUrl} variable={variable} columnName={columnName} />
+        <LocalGeoJsonMap data={geojson} variable={variable} columnName={columnName} />
       </div>
     </div>
   );
