@@ -71,7 +71,13 @@ export default function ModularMapPage() {
   useEffect(() => {
     (async () => {
       const data = await (await fetch(`${BASE_URL}/cache`)).json();
-      if (data) setGeojson(data);
+      if (data){
+        setGeojson(data);
+        const lastVar = localStorage.getItem("modularmap:lastVar");
+        if (lastVar) {
+          setForm(p => ({ ...p, variable:lastVar}));
+        }
+      } 
     })();
   }, []);
 
@@ -159,6 +165,7 @@ export default function ModularMapPage() {
       }
       const gj = await res.json();
       setGeojson(gj);
+      localStorage.setItem("modularmap:lastVar", String(form.variable));
 
       setSavedUrl(`/geojsons/lisa-${selectedFile.id}.geojson`);
     } catch (err) {
