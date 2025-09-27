@@ -57,11 +57,11 @@ Back-end
 1. Open a new terminal at root directory.
 2. Run `pip install -r requirements.txt`.
 3. Create a `.env` file within the `backend` folder with contents:
-   `DB_NAME=postgres`
-   `DB_USER=postgres`
-   `DB_PASS=hanikodi4701!`
-   `DB_HOST=localhost`
-   `DB_PORT=5432`
+   - `DB_NAME=postgres`
+   - `DB_USER=postgres`
+   - `DB_PASS=hanikodi4701!`
+   - `DB_HOST=localhost`
+   - `DB_PORT=5432`
 
 Database
 
