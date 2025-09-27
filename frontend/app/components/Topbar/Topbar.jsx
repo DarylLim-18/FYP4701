@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { FiHome, FiDatabase, FiSettings, FiBarChart } from 'react-icons/fi';
+import { FiHome, FiDatabase, FiSettings, FiBarChart, FiMap } from 'react-icons/fi';
 import { BsGraphUp } from 'react-icons/bs';
 
 export default function Topbar() {
@@ -13,6 +13,7 @@ export default function Topbar() {
     { href: '/data', label: 'Data', icon: <FiDatabase className="w-4 h-4" /> },
     { href: '/machine-learning', label: 'Machine Learning', icon: <BsGraphUp className="w-4 h-4" /> },
     { href: '/data-analysis', label: 'Data Analysis', icon: <FiBarChart className="w-4 h-4" /> },
+    { href: '/modular-map', label: 'Modular Map', icon: <FiMap className="w-4 h-4" /> },
     { href: '/settings', label: 'Settings', icon: <FiSettings className="w-4 h-4" /> },
   ];
 

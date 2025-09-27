@@ -1,0 +1,223 @@
+County,Year,STRATA,AGE GROUP,LIFETIME PREVALENCE,95% CONFIDENCE INTERVAL,Avg PM2.5
+Alameda,2019,Total population,All ages,14.9,(12.5-17.3),6.38212642739726
+Butte,2019,Total population,All ages,20.2,(14.7-25.6),8.08004949090909
+Calaveras,2019,Total population,All ages,25.1,(20.2-30.0),5.507528559171598
+Colusa,2019,Total population,All ages,18.6,(12.5-24.7),6.208393114754098
+Contra Costa,2019,Total population,All ages,17.9,(14.2-21.5),6.917286345205479
+Fresno,2019,Total population,All ages,20.0,(16.3-23.7),10.595683608219176
+Inyo,2019,Total population,All ages,25.1,(20.2-30.0),4.77628118630137
+Kern,2019,Total population,All ages,17.7,(14.1-21.4),6.568703652054794
+Kings,2019,Total population,All ages,21.2,(16.0-26.4),11.89956875890411
+Los Angeles,2019,Total population,All ages,14.6,(13.6-15.7),10.71268641369863
+Madera,2019,Total population,All ages,19.4,(13.9-25.0),9.728384293577982
+Marin,2019,Total population,All ages,19.6,(14.4-24.9),6.425785025495751
+Mendocino,2019,Total population,All ages,13.6,(8.7-18.5),6.025607581717452
+Merced,2019,Total population,All ages,18.9,(13.2-24.7),9.227670866295265
+Mono,2019,Total population,All ages,25.1,(20.2-30.0),8.512718729281767
+Monterey,2019,Total population,All ages,14.4,(10.9-17.9),3.74429521369863
+Napa,2019,Total population,All ages,22.0,(12.3-31.8),5.968946276056338
+Nevada,2019,Total population,All ages,14.5,(10.6-18.4),6.299804672316384
+Orange,2019,Total population,All ages,14.2,(12.4-16.1),9.107763775342466
+Placer,2019,Total population,All ages,17.7,(13.7-21.8),7.20809133427762
+Riverside,2019,Total population,All ages,12.2,(10.4-14.0),4.67727062739726
+Sacramento,2019,Total population,All ages,16.0,(13.2-18.8),5.774376194444445
+San Benito,2019,Total population,All ages,16.4,(8.7-24.0),4.961618297752809
+San Bernardino,2019,Total population,All ages,12.8,(10.7-15.0),15.391920501369864
+San Diego,2019,Total population,All ages,14.2,(12.8-15.7),13.796374869688384
+San Francisco,2019,Total population,All ages,15.4,(12.3-18.4),7.711459540389972
+San Joaquin,2019,Total population,All ages,15.9,(12.2-19.6),9.287168785714286
+San Luis Obispo,2019,Total population,All ages,15.4,(8.8-22.1),7.02848437260274
+San Mateo,2019,Total population,All ages,17.1,(13.4-20.8),7.028916630813954
+Santa Barbara,2019,Total population,All ages,9.6,(6.5-12.7),6.776553383561644
+Santa Clara,2019,Total population,All ages,14.5,(12.4-16.7),5.886988980769231
+Santa Cruz,2019,Total population,All ages,15.2,(11.1-19.3),6.504698509641873
+Siskiyou,2019,Total population,All ages,13.3,(10.2-16.4),5.863393243016761
+Solano,2019,Total population,All ages,22.3,(16.0-28.5),8.670733315642458
+Sonoma,2019,Total population,All ages,17.7,(12.9-22.5),5.723736790087464
+Stanislaus,2019,Total population,All ages,17.0,(13.4-20.6),7.990905917808219
+Tehama,2019,Total population,All ages,18.6,(12.5-24.7),5.475221498583569
+Ventura,2019,Total population,All ages,12.8,(9.5-16.0),7.25176875890411
+Alameda,2019,Child vs. adult,0-17 years,15.8,(10.9-20.7),6.38212642739726
+Butte,2019,Child vs. adult,0-17 years,31.7,(15.5-48.0),8.08004949090909
+Calaveras,2019,Child vs. adult,0-17 years,15.7,(6.2-25.3),5.507528559171598
+Colusa,2019,Child vs. adult,0-17 years,13.9,(4.2-23.7),6.208393114754098
+Contra Costa,2019,Child vs. adult,0-17 years,10.3,(4.2-16.4),6.917286345205479
+Fresno,2019,Child vs. adult,0-17 years,12.6,(6.1-19.1),10.595683608219176
+Inyo,2019,Child vs. adult,0-17 years,15.7,(6.2-25.3),4.77628118630137
+Kern,2019,Child vs. adult,0-17 years,7.3,(3.1-11.5),6.568703652054794
+Kings,2019,Child vs. adult,0-17 years,27.7,(14.0-41.4),11.89956875890411
+Los Angeles,2019,Child vs. adult,0-17 years,12.8,(10.3-15.3),10.71268641369863
+Madera,2019,Child vs. adult,0-17 years,12.8,(0.8-24.8),9.728384293577982
+Marin,2019,Child vs. adult,0-17 years,23.2,(13.4-33.0),6.425785025495751
+Merced,2019,Child vs. adult,0-17 years,11.0,(1.3-20.6),9.227670866295265
+Mono,2019,Child vs. adult,0-17 years,15.7,(6.2-25.3),8.512718729281767
+Monterey,2019,Child vs. adult,0-17 years,14.1,(9.5-18.7),3.74429521369863
+Orange,2019,Child vs. adult,0-17 years,13.8,(10.4-17.3),9.107763775342466
+Placer,2019,Child vs. adult,0-17 years,10.0,(2.8-17.3),7.20809133427762
+Riverside,2019,Child vs. adult,0-17 years,11.5,(6.8-16.2),4.67727062739726
+Sacramento,2019,Child vs. adult,0-17 years,8.1,(3.7-12.5),5.774376194444445
+San Bernardino,2019,Child vs. adult,0-17 years,8.7,(4.3-13.0),15.391920501369864
+San Diego,2019,Child vs. adult,0-17 years,9.8,(7.5-12.1),13.796374869688384
+San Francisco,2019,Child vs. adult,0-17 years,10.6,(6.2-15.0),7.711459540389972
+San Joaquin,2019,Child vs. adult,0-17 years,19.5,(8.9-30.1),9.287168785714286
+San Luis Obispo,2019,Child vs. adult,0-17 years,2.3,(0.4-4.3),7.02848437260274
+San Mateo,2019,Child vs. adult,0-17 years,13.7,(6.0-21.4),7.028916630813954
+Santa Barbara,2019,Child vs. adult,0-17 years,4.8,(1.1-8.6),6.776553383561644
+Santa Clara,2019,Child vs. adult,0-17 years,9.0,(4.3-13.7),5.886988980769231
+Santa Cruz,2019,Child vs. adult,0-17 years,9.9,(1.5-18.3),6.504698509641873
+Solano,2019,Child vs. adult,0-17 years,7.0,(2.4-11.6),8.670733315642458
+Sonoma,2019,Child vs. adult,0-17 years,6.0,(0.2-11.8),5.723736790087464
+Stanislaus,2019,Child vs. adult,0-17 years,16.7,(8.4-25.1),7.990905917808219
+Tehama,2019,Child vs. adult,0-17 years,13.9,(4.2-23.7),5.475221498583569
+Ventura,2019,Child vs. adult,0-17 years,16.6,(6.2-27.1),7.25176875890411
+Alameda,2019,Child vs. adult,18+ years,14.6,(12.2-17.1),6.38212642739726
+Butte,2019,Child vs. adult,18+ years,17.3,(12.3-22.2),8.08004949090909
+Calaveras,2019,Child vs. adult,18+ years,26.6,(21.3-32.0),5.507528559171598
+Colusa,2019,Child vs. adult,18+ years,20.2,(13.1-27.2),6.208393114754098
+Contra Costa,2019,Child vs. adult,18+ years,19.9,(15.9-24.0),6.917286345205479
+Fresno,2019,Child vs. adult,18+ years,22.8,(18.6-27.0),10.595683608219176
+Inyo,2019,Child vs. adult,18+ years,26.6,(21.3-32.0),4.77628118630137
+Kern,2019,Child vs. adult,18+ years,22.0,(17.2-26.9),6.568703652054794
+Kings,2019,Child vs. adult,18+ years,18.4,(13.3-23.6),11.89956875890411
+Los Angeles,2019,Child vs. adult,18+ years,15.2,(14.0-16.4),10.71268641369863
+Madera,2019,Child vs. adult,18+ years,22.0,(16.1-27.8),9.728384293577982
+Marin,2019,Child vs. adult,18+ years,18.7,(12.7-24.6),6.425785025495751
+Mendocino,2019,Child vs. adult,18+ years,15.1,(9.9-20.3),6.025607581717452
+Merced,2019,Child vs. adult,18+ years,22.0,(15.2-28.9),9.227670866295265
+Mono,2019,Child vs. adult,18+ years,26.6,(21.3-32.0),8.512718729281767
+Monterey,2019,Child vs. adult,18+ years,14.5,(10.0-18.9),3.74429521369863
+Napa,2019,Child vs. adult,18+ years,20.0,(13.0-27.1),5.968946276056338
+Nevada,2019,Child vs. adult,18+ years,16.1,(11.6-20.5),6.299804672316384
+Orange,2019,Child vs. adult,18+ years,14.3,(12.2-16.4),9.107763775342466
+Placer,2019,Child vs. adult,18+ years,19.9,(15.3-24.4),7.20809133427762
+Riverside,2019,Child vs. adult,18+ years,12.5,(10.5-14.4),4.67727062739726
+Sacramento,2019,Child vs. adult,18+ years,18.6,(15.0-22.2),5.774376194444445
+San Benito,2019,Child vs. adult,18+ years,18.8,(12.8-24.8),4.961618297752809
+San Bernardino,2019,Child vs. adult,18+ years,14.3,(11.8-16.8),15.391920501369864
+San Diego,2019,Child vs. adult,18+ years,15.7,(13.9-17.4),13.796374869688384
+San Francisco,2019,Child vs. adult,18+ years,16.3,(13.0-19.7),7.711459540389972
+San Joaquin,2019,Child vs. adult,18+ years,14.6,(10.8-18.4),9.287168785714286
+San Luis Obispo,2019,Child vs. adult,18+ years,20.6,(11.3-29.9),7.02848437260274
+San Mateo,2019,Child vs. adult,18+ years,18.1,(13.9-22.2),7.028916630813954
+Santa Barbara,2019,Child vs. adult,18+ years,11.0,(7.1-14.8),6.776553383561644
+Santa Clara,2019,Child vs. adult,18+ years,16.2,(13.8-18.6),5.886988980769231
+Santa Cruz,2019,Child vs. adult,18+ years,16.2,(11.7-20.8),6.504698509641873
+Siskiyou,2019,Child vs. adult,18+ years,15.6,(12.0-19.3),5.863393243016761
+Solano,2019,Child vs. adult,18+ years,26.9,(18.7-35.0),8.670733315642458
+Sonoma,2019,Child vs. adult,18+ years,20.2,(14.7-25.8),5.723736790087464
+Stanislaus,2019,Child vs. adult,18+ years,17.1,(13.3-21.0),7.990905917808219
+Tehama,2019,Child vs. adult,18+ years,20.2,(13.1-27.2),5.475221498583569
+Ventura,2019,Child vs. adult,18+ years,11.7,(9.0-14.3),7.25176875890411
+Contra Costa,2019,Age groups,0-4 years,4.7,(0.3-9.2),6.917286345205479
+Los Angeles,2019,Age groups,0-4 years,7.7,(3.8-11.6),10.71268641369863
+Orange,2019,Age groups,0-4 years,2.6,(0.4-4.9),9.107763775342466
+San Diego,2019,Age groups,0-4 years,5.2,(3.5-6.9),13.796374869688384
+Alameda,2019,Age groups,5-17 years,20.5,(14.5-26.5),6.38212642739726
+Butte,2019,Age groups,5-17 years,37.6,(17.7-57.6),8.08004949090909
+Calaveras,2019,Age groups,5-17 years,24.7,(10.6-38.9),5.507528559171598
+Colusa,2019,Age groups,5-17 years,19.2,(7.0-31.5),6.208393114754098
+Contra Costa,2019,Age groups,5-17 years,11.8,(4.8-18.9),6.917286345205479
+Fresno,2019,Age groups,5-17 years,13.4,(6.5-20.2),10.595683608219176
+Inyo,2019,Age groups,5-17 years,24.7,(10.6-38.9),4.77628118630137
+Kern,2019,Age groups,5-17 years,9.0,(3.6-14.3),6.568703652054794
+Kings,2019,Age groups,5-17 years,37.6,(20.6-54.5),11.89956875890411
+Los Angeles,2019,Age groups,5-17 years,14.7,(11.7-17.7),10.71268641369863
+Madera,2019,Age groups,5-17 years,17.3,(1.9-32.8),9.728384293577982
+Marin,2019,Age groups,5-17 years,27.8,(16.8-38.9),6.425785025495751
+Merced,2019,Age groups,5-17 years,13.4,(1.2-25.5),9.227670866295265
+Mono,2019,Age groups,5-17 years,24.7,(10.6-38.9),8.512718729281767
+Monterey,2019,Age groups,5-17 years,16.3,(10.7-22.0),3.74429521369863
+Orange,2019,Age groups,5-17 years,17.3,(12.9-21.7),9.107763775342466
+Placer,2019,Age groups,5-17 years,11.6,(2.4-20.8),7.20809133427762
+Riverside,2019,Age groups,5-17 years,13.4,(7.5-19.3),4.67727062739726
+Sacramento,2019,Age groups,5-17 years,10.9,(4.8-17.1),5.774376194444445
+San Bernardino,2019,Age groups,5-17 years,12.6,(6.2-19.1),15.391920501369864
+San Diego,2019,Age groups,5-17 years,12.0,(8.5-15.5),13.796374869688384
+San Francisco,2019,Age groups,5-17 years,16.5,(9.8-23.1),7.711459540389972
+San Joaquin,2019,Age groups,5-17 years,22.5,(9.8-35.2),9.287168785714286
+San Luis Obispo,2019,Age groups,5-17 years,3.2,(0.3-6.2),7.02848437260274
+San Mateo,2019,Age groups,5-17 years,18.4,(8.2-28.6),7.028916630813954
+Santa Barbara,2019,Age groups,5-17 years,6.6,(1.4-11.9),6.776553383561644
+Santa Clara,2019,Age groups,5-17 years,11.3,(5.2-17.4),5.886988980769231
+Santa Cruz,2019,Age groups,5-17 years,11.5,(1.7-21.3),6.504698509641873
+Solano,2019,Age groups,5-17 years,10.8,(3.1-18.6),8.670733315642458
+Sonoma,2019,Age groups,5-17 years,6.7,(0.2-13.2),5.723736790087464
+Stanislaus,2019,Age groups,5-17 years,19.1,(8.2-30.1),7.990905917808219
+Tehama,2019,Age groups,5-17 years,19.2,(7.0-31.5),5.475221498583569
+Ventura,2019,Age groups,5-17 years,16.1,(5.4-26.7),7.25176875890411
+Alameda,2019,Age groups,18-64 years,14.3,(11.3-17.3),6.38212642739726
+Butte,2019,Age groups,18-64 years,18.6,(12.4-24.9),8.08004949090909
+Calaveras,2019,Age groups,18-64 years,29.2,(20.8-37.7),5.507528559171598
+Colusa,2019,Age groups,18-64 years,21.8,(12.4-31.2),6.208393114754098
+Contra Costa,2019,Age groups,18-64 years,20.3,(15.4-25.2),6.917286345205479
+Fresno,2019,Age groups,18-64 years,23.7,(18.7-28.6),10.595683608219176
+Inyo,2019,Age groups,18-64 years,29.2,(20.8-37.7),4.77628118630137
+Kern,2019,Age groups,18-64 years,23.4,(18.0-28.8),6.568703652054794
+Kings,2019,Age groups,18-64 years,17.2,(11.7-22.6),11.89956875890411
+Los Angeles,2019,Age groups,18-64 years,15.5,(14.1-16.9),10.71268641369863
+Madera,2019,Age groups,18-64 years,21.3,(14.0-28.6),9.728384293577982
+Marin,2019,Age groups,18-64 years,19.0,(11.0-27.0),6.425785025495751
+Mendocino,2019,Age groups,18-64 years,17.5,(10.0-25.1),6.025607581717452
+Merced,2019,Age groups,18-64 years,23.9,(15.9-31.9),9.227670866295265
+Mono,2019,Age groups,18-64 years,29.2,(20.8-37.7),8.512718729281767
+Monterey,2019,Age groups,18-64 years,12.8,(7.9-17.7),3.74429521369863
+Napa,2019,Age groups,18-64 years,16.7,(9.4-24.0),5.968946276056338
+Nevada,2019,Age groups,18-64 years,15.8,(9.7-21.9),6.299804672316384
+Orange,2019,Age groups,18-64 years,15.3,(12.7-17.9),9.107763775342466
+Placer,2019,Age groups,18-64 years,24.8,(18.5-31.0),7.20809133427762
+Riverside,2019,Age groups,18-64 years,12.8,(10.5-15.2),4.67727062739726
+Sacramento,2019,Age groups,18-64 years,19.1,(14.8-23.4),5.774376194444445
+San Benito,2019,Age groups,18-64 years,20.2,(12.9-27.5),4.961618297752809
+San Bernardino,2019,Age groups,18-64 years,14.4,(11.4-17.3),15.391920501369864
+San Diego,2019,Age groups,18-64 years,16.7,(14.5-18.8),13.796374869688384
+San Francisco,2019,Age groups,18-64 years,16.5,(12.7-20.3),7.711459540389972
+San Joaquin,2019,Age groups,18-64 years,15.1,(10.6-19.6),9.287168785714286
+San Luis Obispo,2019,Age groups,18-64 years,22.9,(9.9-35.9),7.02848437260274
+San Mateo,2019,Age groups,18-64 years,18.6,(13.8-23.4),7.028916630813954
+Santa Barbara,2019,Age groups,18-64 years,11.1,(6.2-16.0),6.776553383561644
+Santa Clara,2019,Age groups,18-64 years,15.4,(12.8-18.0),5.886988980769231
+Santa Cruz,2019,Age groups,18-64 years,18.4,(12.5-24.2),6.504698509641873
+Siskiyou,2019,Age groups,18-64 years,17.3,(12.3-22.4),5.863393243016761
+Solano,2019,Age groups,18-64 years,26.3,(15.9-36.6),8.670733315642458
+Sonoma,2019,Age groups,18-64 years,20.4,(13.3-27.5),5.723736790087464
+Stanislaus,2019,Age groups,18-64 years,17.7,(13.5-22.0),7.990905917808219
+Tehama,2019,Age groups,18-64 years,21.8,(12.4-31.2),5.475221498583569
+Ventura,2019,Age groups,18-64 years,12.0,(8.7-15.3),7.25176875890411
+Alameda,2019,Age groups,65+ years,15.9,(11.1-20.6),6.38212642739726
+Butte,2019,Age groups,65+ years,12.4,(7.3-17.5),8.08004949090909
+Calaveras,2019,Age groups,65+ years,22.4,(16.2-28.6),5.507528559171598
+Colusa,2019,Age groups,65+ years,15.6,(9.8-21.3),6.208393114754098
+Contra Costa,2019,Age groups,65+ years,18.7,(13.5-24.0),6.917286345205479
+Fresno,2019,Age groups,65+ years,19.3,(11.2-27.5),10.595683608219176
+Inyo,2019,Age groups,65+ years,22.4,(16.2-28.6),4.77628118630137
+Kern,2019,Age groups,65+ years,14.9,(6.6-23.2),6.568703652054794
+Kings,2019,Age groups,65+ years,25.8,(6.9-44.7),11.89956875890411
+Los Angeles,2019,Age groups,65+ years,14.1,(11.9-16.3),10.71268641369863
+Madera,2019,Age groups,65+ years,24.4,(15.8-33.1),9.728384293577982
+Marin,2019,Age groups,65+ years,17.9,(12.3-23.5),6.425785025495751
+Mendocino,2019,Age groups,65+ years,10.3,(6.4-14.1),6.025607581717452
+Merced,2019,Age groups,65+ years,12.0,(7.8-16.1),9.227670866295265
+Mono,2019,Age groups,65+ years,22.4,(16.2-28.6),8.512718729281767
+Monterey,2019,Age groups,65+ years,22.6,(12.9-32.3),3.74429521369863
+Napa,2019,Age groups,65+ years,29.5,(13.8-45.2),5.968946276056338
+Nevada,2019,Age groups,65+ years,16.6,(11.5-21.7),6.299804672316384
+Orange,2019,Age groups,65+ years,10.5,(8.2-12.9),9.107763775342466
+Placer,2019,Age groups,65+ years,9.1,(5.7-12.5),7.20809133427762
+Riverside,2019,Age groups,65+ years,11.1,(8.7-13.5),4.67727062739726
+Sacramento,2019,Age groups,65+ years,16.3,(12.1-20.5),5.774376194444445
+San Benito,2019,Age groups,65+ years,13.1,(7.7-18.6),4.961618297752809
+San Bernardino,2019,Age groups,65+ years,14.3,(10.0-18.6),15.391920501369864
+San Diego,2019,Age groups,65+ years,11.4,(9.4-13.4),13.796374869688384
+San Francisco,2019,Age groups,65+ years,15.7,(9.2-22.2),7.711459540389972
+San Joaquin,2019,Age groups,65+ years,12.7,(5.1-20.3),9.287168785714286
+San Luis Obispo,2019,Age groups,65+ years,15.6,(9.9-21.2),7.02848437260274
+San Mateo,2019,Age groups,65+ years,16.0,(6.0-26.0),7.028916630813954
+Santa Barbara,2019,Age groups,65+ years,10.5,(3.9-17.2),6.776553383561644
+Santa Clara,2019,Age groups,65+ years,19.9,(14.2-25.6),5.886988980769231
+Santa Cruz,2019,Age groups,65+ years,9.3,(6.0-12.6),6.504698509641873
+Siskiyou,2019,Age groups,65+ years,12.3,(7.9-16.8),5.863393243016761
+Solano,2019,Age groups,65+ years,28.6,(19.6-37.7),8.670733315642458
+Sonoma,2019,Age groups,65+ years,20.0,(12.4-27.5),5.723736790087464
+Stanislaus,2019,Age groups,65+ years,13.8,(6.0-21.6),7.990905917808219
+Tehama,2019,Age groups,65+ years,15.6,(9.8-21.3),5.475221498583569
+Ventura,2019,Age groups,65+ years,10.5,(6.5-14.5),7.25176875890411

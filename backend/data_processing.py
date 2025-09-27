@@ -114,8 +114,8 @@ def split_data_by_strata_and_save(
 
 # merge all cleaned data into one file on column named 'county name'
 
-df = load_data("data/merged_data/cleaned_merged_asthma_pm2.5.csv")
+df = load_data("data/merged_data/cleaned_merged_asthma_ozone.csv")
 
-df = df[df['Year'] == 2015]
+df = df[df['Year'] == 2019]
 
-df.to_csv("data/spatial_test.csv", index=False)
+df.to_csv("data/spatial_test-3o.csv", index=False)
