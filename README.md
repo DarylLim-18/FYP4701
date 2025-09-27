@@ -10,8 +10,7 @@
 4. [Setup and Installation Instructions](#setup-and-installation-instructions)
 5. [How to Run the Project](#how-to-run-the-project)
 6. [Common Issues and Troubleshooting](#common-issues-and-troubleshooting)
-7. [Additional Notes](#additional-notes)
-8. [Contact Information](#contact-information)
+7. [Contact Information](#contact-information)
 
 ## Project Overview
 
