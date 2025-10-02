@@ -14,6 +14,10 @@ export default function Home() {
         </div>
         <div className="p-3"></div>
         <div className="bg-gray-800 rounded-lg shadow-xl p-6"><MapWrapper /></div>
+
+        <div className="p-3"></div>
+        {/* Insert any content below */}
+
         </main>
     );
   }
