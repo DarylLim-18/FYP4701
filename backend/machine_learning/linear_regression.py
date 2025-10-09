@@ -1,4 +1,6 @@
 import pandas as pd
+import io
+import base64
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
@@ -110,25 +112,36 @@ def run_linear_regression(data, feature_cols, target_col):
     print("Intercept:", model.intercept_) # Predicted value of asthma prevalence when all features are 0
     print("\nSample of merged data:\n", data.head())
     
-    plt.figure(figsize=(8, 6), num='Linear Regression')
-    plt.scatter(y_test, y_pred, alpha=0.6, label="Predictions")
-    plt.plot([y.min(), y.max()], [y.min(), y.max()], 'r--', label="Ideal Fit")
-    plt.xlabel("Actual Prevalence")
-    plt.ylabel("Predicted Prevalence")
-    plt.title("Actual vs Predicted Asthma Prevalence")
-    plt.legend()
-    plt.grid(True)
-    plt.tight_layout()
-    plt.show()
-    
+    # --- Visualization ---
+    fig, ax = plt.subplots(figsize=(8, 6))
+    ax.scatter(y_test, y_pred, alpha=0.6, label="Predictions")
+    y_min, y_max = min(y_test.min(), y_pred.min()), max(y_test.max(), y_pred.max())
+    ax.plot([y_min, y_max], [y_min, y_max], 'r--', label="Ideal Fit")
+    ax.set_xlabel("Actual Prevalence")
+    ax.set_ylabel("Predicted Prevalence")
+    ax.set_title("Linear Regression: Actual vs Predicted Asthma Prevalence")
+    ax.legend()
+    ax.grid(True)
+    fig.tight_layout()
+
+    # --- Convert figure to Base64 ---
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png', bbox_inches='tight')
+    plt.close(fig)
+    buf.seek(0)
+    image_base64 = base64.b64encode(buf.read()).decode('utf-8')
+
+    # --- Return results ---
     res = {
+        "Model": "Linear Regression",
         "Features Used": feature_cols,
         "Mean Squared Error": mse,
         "R² score": r2,
         "Coefficients": model.coef_.tolist(),
         "Intercept": model.intercept_,
+        "PlotImage": image_base64, 
     }
-    
+
     return res
 
 # def main():

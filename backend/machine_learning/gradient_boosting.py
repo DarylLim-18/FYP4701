@@ -1,7 +1,8 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-
+import io
+import base64
 from sklearn.model_selection import train_test_split, KFold, RandomizedSearchCV
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.metrics import mean_squared_error, r2_score
@@ -18,7 +19,6 @@ def run_gradient_boosting(data: pd.DataFrame, feature_cols: list, target_col: st
     )
 
     base = GradientBoostingRegressor(random_state=42)
-    
 
     # Reasonable search space (fast + effective)
     param_dist = {
@@ -54,14 +54,14 @@ def run_gradient_boosting(data: pd.DataFrame, feature_cols: list, target_col: st
     print(f"CV best RMSE: {-search.best_score_:.4f}")
     print(f"Hold-out MSE: {mse:.4f} | R^2: {r2:.4f}")
 
-    # Plots (same 2x2 layout you already use)
+    # Plots (2x2 layout)
     fig, axs = plt.subplots(2, 2, figsize=(14, 10))
     fig.suptitle("Gradient Boosting Regression", fontsize=16)
 
     # Actual vs Predicted
     axs[0, 0].scatter(y_test, y_pred, alpha=0.6, label="Predictions")
-    y_min = min(y_test.min(), y_pred.min())
-    y_max = max(y_test.max(), y_pred.max())
+    y_min = min(y_test.min(), np.nanmin(y_pred))
+    y_max = max(y_test.max(), np.nanmax(y_pred))
     axs[0, 0].plot([y_min, y_max], [y_min, y_max], 'r--', label="Ideal Fit")
     axs[0, 0].set_xlabel("Actual Prevalence")
     axs[0, 0].set_ylabel("Predicted Prevalence")
@@ -69,7 +69,7 @@ def run_gradient_boosting(data: pd.DataFrame, feature_cols: list, target_col: st
     axs[0, 0].legend(); axs[0, 0].grid(True)
 
     # Residuals
-    residuals = y_test - y_pred
+    residuals = (y_test.values if hasattr(y_test, "values") else y_test) - y_pred
     axs[0, 1].scatter(y_pred, residuals, alpha=0.6)
     axs[0, 1].axhline(0, color='red', linestyle='--')
     axs[0, 1].set_xlabel("Predicted Prevalence")
@@ -80,7 +80,8 @@ def run_gradient_boosting(data: pd.DataFrame, feature_cols: list, target_col: st
     # Feature Importance
     importances = getattr(model, "feature_importances_", None)
     if importances is not None:
-        axs[1, 0].barh(feature_cols, importances)
+        sorted_idx = np.argsort(importances)
+        axs[1, 0].barh(np.array(feature_cols)[sorted_idx], importances[sorted_idx])
         axs[1, 0].set_xlabel("Feature Importance")
         axs[1, 0].set_title("Feature Importance")
     else:
@@ -88,7 +89,13 @@ def run_gradient_boosting(data: pd.DataFrame, feature_cols: list, target_col: st
 
     axs[1, 1].axis('off')
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    plt.show()
+
+    # Convert figure to base64 PNG
+    buf = io.BytesIO()
+    plt.savefig(buf, format="png", bbox_inches='tight')
+    plt.close(fig)
+    buf.seek(0)
+    image_base64 = base64.b64encode(buf.read()).decode("utf-8")
 
     top_features = []
     if importances is not None:
@@ -102,5 +109,6 @@ def run_gradient_boosting(data: pd.DataFrame, feature_cols: list, target_col: st
         "R² score": r2,
         "CV_best_params": search.best_params_,
         "CV_best_RMSE": -float(search.best_score_),
-        "Top Features": top_features
+        "Top Features": top_features,
+        "PlotImage": image_base64,
     }

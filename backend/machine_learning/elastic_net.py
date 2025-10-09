@@ -1,4 +1,6 @@
 import pandas as pd
+import io
+import base64
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error, r2_score
@@ -35,16 +37,22 @@ def run_elastic_net_regression(data, feature_cols, target_col, alpha=1.0, l1_rat
     print("Intercept:", model.intercept_)
 
     # Plot Actual vs Predicted
-    plt.figure(figsize=(8, 6), num="Elastic Net Regression")
-    plt.scatter(y_test, y_pred, alpha=0.6, label="Predictions")
-    plt.plot([y.min(), y.max()], [y.min(), y.max()], "r--", label="Ideal Fit")
-    plt.xlabel("Actual Prevalence")
-    plt.ylabel("Predicted Prevalence")
-    plt.title("Elastic Net: Actual vs Predicted Asthma Prevalence")
-    plt.legend()
-    plt.grid(True)
-    plt.tight_layout()
-    plt.show()
+    fig, ax = plt.subplots(figsize=(8, 6))
+    ax.scatter(y_test, y_pred, alpha=0.6, label="Predictions", color="royalblue")
+    ax.plot([y.min(), y.max()], [y.min(), y.max()], "r--", label="Ideal Fit")
+    ax.set_xlabel("Actual Prevalence")
+    ax.set_ylabel("Predicted Prevalence")
+    ax.set_title("Elastic Net: Actual vs Predicted Asthma Prevalence")
+    ax.legend()
+    ax.grid(True)
+    fig.tight_layout()
+
+    buf = io.BytesIO()
+    plt.savefig(buf, format="png", bbox_inches="tight")
+    plt.close(fig)
+    buf.seek(0)
+    image_base64 = base64.b64encode(buf.read()).decode("utf-8")
+
 
     return {
         "Features Used": feature_cols,
@@ -54,4 +62,5 @@ def run_elastic_net_regression(data, feature_cols, target_col, alpha=1.0, l1_rat
         "R² score": r2,
         "Coefficients": model.coef_.tolist(),
         "Intercept": model.intercept_,
+        "PlotImage": image_base64,
     }

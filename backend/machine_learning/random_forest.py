@@ -2,6 +2,8 @@ import pandas as pd
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
+import io
+import base64
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import KFold, train_test_split, cross_val_score
 from sklearn.metrics import mean_squared_error, r2_score
@@ -116,7 +118,6 @@ def run_rf_model(data, feature_cols, target_col='CURRENT_PREVALENCE'):
 
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     axs[1, 1].axis('off')
-    plt.show()
 
     # Show worst residuals
     residual_df = pd.DataFrame({
@@ -126,12 +127,19 @@ def run_rf_model(data, feature_cols, target_col='CURRENT_PREVALENCE'):
     })
     print("\n--- Worst Residuals (Top 5) ---")
     print(residual_df.reindex(residuals.abs().sort_values(ascending=False).index).head())
+
+    buf = io.BytesIO()
+    plt.savefig(buf, format="png", bbox_inches='tight')
+    plt.close(fig)
+    buf.seek(0)
+    image_base64 = base64.b64encode(buf.read()).decode("utf-8")
     
     res = {
         "Features Used": feature_cols,
         "Mean Squared Error": mse,
         "R² score": r2,
-        "Worst Residuals": residual_df.reindex(residuals.abs().sort_values(ascending=False).index).head() 
+        "Worst Residuals": residual_df.reindex(residuals.abs().sort_values(ascending=False).index).head(),
+        "PlotImage": image_base64
     }
 
     return res

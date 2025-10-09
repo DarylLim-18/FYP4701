@@ -1,4 +1,6 @@
 import pandas as pd
+import io
+import base64
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
 import matplotlib.pyplot as plt
@@ -169,9 +171,12 @@ def run_logistic_regression(data, feature_cols, target_col='CURRENT PREVALENCE',
     # --- Leave last subplot blank (or use for notes/legend) ---
     axs[1, 1].axis('off')
 
-    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    plt.show()
-
+    # Convert plot to base64 string
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png')
+    plt.close(fig)
+    buf.seek(0)
+    image_base64 = base64.b64encode(buf.read()).decode('utf-8')
 
     return {
         "Features Used": feature_cols,
@@ -180,6 +185,7 @@ def run_logistic_regression(data, feature_cols, target_col='CURRENT PREVALENCE',
         "Classification Report": report,
         "Coefficients": model.coef_.tolist(),
         "Intercept": model.intercept_.tolist(),
+        "PlotImage": image_base64,
     }
 
 def main():
