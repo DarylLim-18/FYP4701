@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import io
+import base64
 
 from sklearn.model_selection import train_test_split, KFold, RandomizedSearchCV
 from sklearn.pipeline import make_pipeline
