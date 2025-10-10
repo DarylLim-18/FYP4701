@@ -10,8 +10,7 @@
 4. [Setup and Installation Instructions](#setup-and-installation-instructions)
 5. [How to Run the Project](#how-to-run-the-project)
 6. [Common Issues and Troubleshooting](#common-issues-and-troubleshooting)
-7. [Additional Notes](#additional-notes)
-8. [Contact Information](#contact-information)
+7. [Contact Information](#contact-information)
 
 ## Project Overview
 
@@ -58,11 +57,11 @@ Back-end
 1. Open a new terminal at root directory.
 2. Run `pip install -r requirements.txt`.
 3. Create a `.env` file within the `backend` folder with contents:
-   `DB_NAME=postgres`
-   `DB_USER=postgres`
-   `DB_PASS=hanikodi4701!`
-   `DB_HOST=localhost`
-   `DB_PORT=5432`
+   - `DB_NAME=postgres`
+   - `DB_USER=postgres`
+   - `DB_PASS=hanikodi4701!`
+   - `DB_HOST=localhost`
+   - `DB_PORT=5432`
 
 Database
 
