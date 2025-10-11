@@ -68,6 +68,18 @@ export default function ModularMapPage() {
     }));
   }, [form.joinBy, form.level]);
 
+  useEffect(() => {
+    (async () => {
+      const data = await (await fetch(`${BASE_URL}/cache`)).json();
+      if (data){
+        setGeojson(data);
+        const lastVar = localStorage.getItem("modularmap:lastVar");
+        if (lastVar) {
+          setForm(p => ({ ...p, variable:lastVar}));
+        }
+      } 
+    })();
+  }, []);
 
   const errors = useMemo(() => {
     const e = {};
@@ -153,8 +165,8 @@ export default function ModularMapPage() {
       }
       const gj = await res.json();
       setGeojson(gj);
+      localStorage.setItem("modularmap:lastVar", String(form.variable));
 
-      // point the map to the locally saved file
       setSavedUrl(`/geojsons/lisa-${selectedFile.id}.geojson`);
     } catch (err) {
       setRunError(err?.message || "Failed to run LISA.");

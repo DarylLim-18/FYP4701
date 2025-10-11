@@ -11,3 +11,22 @@ CREATE TABLE cache (
     updated_time timestamptz NOT NULL DEFAULT now(),
     PRIMARY KEY (cache_id)
 );
+
+CREATE TABLE asthma_geodata(
+    asthmageo_id int,
+    asthmageo_name VARCHAR(255),
+    asthmageo_data JSONB,
+    PRIMARY KEY(asthmageo_id)
+);
+
+ALTER TABLE asthma_geodata
+    ADD CONSTRAINT unique_asthmageo_name UNIQUE (asthmageo_name);
+
+
+CREATE TABLE user_geodata(
+    usergeo_id int,
+    usergeo_name VARCHAR(255),
+    usergeo_data JSONB,
+    PRIMARY KEY(usergeo_id)
+);
+

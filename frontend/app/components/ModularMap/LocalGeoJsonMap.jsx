@@ -12,10 +12,25 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
-const POSITIVE_COLORS = ["#FFEDA0", "#FED976", "#FEB24C", "#FD8D3C", "#E31A1C", "#800026"];
-const NEGATIVE_COLORS = ["#08519C", "#3182BD", "#6BAED6", "#BDD7E7"];
+const POSITIVE_COLORS = [
+"#f2fdaa",
+"#efed8c",
+"#eedc6f",
+"#efca53",
+"#f1b639",
+"#f4a11f",
+"#f78a00",
+"#fb6f00",
+"#fd4d00",
+"#ff0808ff"
+];
+const NEGATIVE_COLORS = [
+"#1b9ae4",
+"#00bddd",
+"#41d9c3",
+"#9feeac"
+];
 const DEFAULT_COLOR = "#FFEDA0";
-
 const numberFormatter = new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 });
 
 function colorFromScale(value, start, end, colors) {
@@ -153,45 +168,73 @@ function GeoJsonLayer({ data, variable, min, max, setHoverProps }) {
   return data ? <GeoJSON data={data} style={styleFn} onEachFeature={onEach} /> : null;
 }
 
-export default function LocalGeoJsonMap({ path, variable, columnName, center = [37.1841, -119.4696], zoom = 6, onLoaded }) {
+function computeMinMax(gj, variable) {
+
+  let maxVal = Number.NEGATIVE_INFINITY;
+  let minVal = Number.POSITIVE_INFINITY;
+  for (const f of gj?.features ?? []) {
+    const v = Number(f?.properties?.[variable]);
+    if (Number.isFinite(v)) {
+      if (v > maxVal) maxVal = v;
+      if (v < minVal) minVal = v;
+    }
+  }
+  return {
+    min: Number.isFinite(minVal) ? minVal : 0,
+    max: Number.isFinite(maxVal) ? maxVal : 0,
+  };
+
+}
+// export default function LocalGeoJsonMap({ path, data: dataProp, variable, columnName, center = [37.1841, -119.4696], zoom = 6, onLoaded }) {
+export default function LocalGeoJsonMap({ data: dataProp, variable, columnName, center = [37.1841, -119.4696], zoom = 6, onLoaded }) {
   const [data, setData] = useState(null);
   const [hoverProps, setHoverProps] = useState(null);
   const [max, setMax] = useState(0);
   const [min, setMin] = useState(0);
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch(path);
-        const gj = await res.json();
-        if (!cancelled) {
-          setData(gj);
-          onLoaded?.(gj);
+    if(!dataProp)
+      return;
+    setData(dataProp);
+    onLoaded?.(dataProp);
+    const {min, max} = computeMinMax(dataProp, variable);
+    setMin(min);
+    setMax(max);
+  }, [dataProp, variable, onLoaded]);
 
-          let maxVal = Number.NEGATIVE_INFINITY;
-          let minVal = Number.POSITIVE_INFINITY;
-          for (const f of gj?.features ?? []) {
-            const v = Number(f?.properties?.[variable]);
-            if (Number.isFinite(v)) {
-              if (v > maxVal) maxVal = v;
-              if (v < minVal) minVal = v;
-            }
-          }
-          if (!Number.isFinite(maxVal) && !Number.isFinite(minVal)) {
-            setMax(0);
-            setMin(0);
-          } else {
-            setMax(Number.isFinite(maxVal) ? maxVal : 0);
-            setMin(Number.isFinite(minVal) ? minVal : 0);
-          }
-        }
-      } catch (e) {
-        console.error("Failed to load GeoJSON:", e);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [path, variable, onLoaded]);
+  // useEffect(() => {
+  //   let cancelled = false;
+  //   (async () => {
+  //     try {
+  //       const res = await fetch(path);
+  //       const gj = await res.json();
+  //       if (!cancelled) {
+  //         setData(gj);
+  //         onLoaded?.(gj);
+
+  //         let maxVal = Number.NEGATIVE_INFINITY;
+  //         let minVal = Number.POSITIVE_INFINITY;
+  //         for (const f of gj?.features ?? []) {
+  //           const v = Number(f?.properties?.[variable]);
+  //           if (Number.isFinite(v)) {
+  //             if (v > maxVal) maxVal = v;
+  //             if (v < minVal) minVal = v;
+  //           }
+  //         }
+  //         if (!Number.isFinite(maxVal) && !Number.isFinite(minVal)) {
+  //           setMax(0);
+  //           setMin(0);
+  //         } else {
+  //           setMax(Number.isFinite(maxVal) ? maxVal : 0);
+  //           setMin(Number.isFinite(minVal) ? minVal : 0);
+  //         }
+  //       }
+  //     } catch (e) {
+  //       console.error("Failed to load GeoJSON:", e);
+  //     }
+  //   })();
+  //   return () => { cancelled = true; };
+  // }, [path, variable, onLoaded]);
 
   const label = useMemo(() => labelFromProps(hoverProps, columnName), [hoverProps, columnName]);
   const val = useMemo(() => {
