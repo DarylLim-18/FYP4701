@@ -5,7 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import { useEffect, useMemo, useState, useRef } from 'react';
 import { FiPlay, FiBarChart2, FiAlertCircle } from 'react-icons/fi';
 import { FaStarOfDavid } from "react-icons/fa6";
-import { BsStars } from "react-icons/bs";
+import { BsStars, BsClockHistory, BsGraphUpArrow } from "react-icons/bs";
 
 // Fix default icon paths
 delete L.Icon.Default.prototype._getIconUrl;
@@ -476,8 +476,8 @@ const handleConfirmWithDelay = async () => {
 
 const [selectedOthers, setSelectedOthers] = useState("");
 
-  const clickRick = () => {
-    window.open("https://youtu.be/dQw4w9WgXcQ?si=n8-YzA4eBiVOZp-n", "_blank", "noopener,noreferrer");
+  const clickRick = (link) => {
+    window.open(link, "_blank", "noopener,noreferrer");
   };
 
   return (
@@ -488,7 +488,14 @@ const [selectedOthers, setSelectedOthers] = useState("");
             {/* <MapControls /> */}
             {/* Prevalence Type Selection */}
               <div className="space-y-3">
-                <LabelDot color="indigo-400" text="Prevalence Type" />
+                <LabelDot color="indigo-400" text={
+                                                    <span className="inline-flex items-center whitespace-nowrap">
+                                                    Prevalence Type       
+                                                    {/* brings you to youtube upon clicking */}
+                                                
+                                                    <BsGraphUpArrow onClick={() => clickRick("https://youtu.be/dQw4w9WgXcQ?si=n8-YzA4eBiVOZp-n")} className="ml-1 text-xl text-indigo-300 hover:text-indigo-700 transition-colors duration-300" />
+                                                    </span>
+                                                } />
                 <StyledSelect
                 label="Type of Prevalence"
                 options={typeOfPrevalence}
@@ -502,7 +509,13 @@ const [selectedOthers, setSelectedOthers] = useState("");
 
               {/* Year Selection */}
               <div className="space-y-3">
-                <LabelDot color="emerald-400" text="Time Period" />
+                <LabelDot color="emerald-400" text={
+                                                    <span className="inline-flex items-center whitespace-nowrap">
+                                                    Year        
+                                                    {/* brings you to youtube upon clicking */}
+                                                    <BsClockHistory onClick={() => clickRick("https://youtu.be/dQw4w9WgXcQ?si=n8-YzA4eBiVOZp-n")} className="ml-1 text-xl text-indigo-300 hover:text-indigo-700 transition-colors duration-300" />
+                                                    </span>
+                                                } />
                 <StyledSelect
                   label="Year Range"
                   options={prevalenceYears}
@@ -519,9 +532,9 @@ const [selectedOthers, setSelectedOthers] = useState("");
                 <div className="space-y-3">
                   <LabelDot color="rose-400" text={
                                                     <span className="inline-flex items-center whitespace-nowrap">
-                                                    Other Years  
+                                                    Other Years     
                                                     {/* brings you to youtube upon clicking */}
-                                                    <BsStars onClick={clickRick} className="ml-1 text-xl text-indigo-300 hover:text-indigo-700 transition-colors duration-300" />
+                                                    <BsStars onClick={() => clickRick("https://youtu.be/dQw4w9WgXcQ?si=n8-YzA4eBiVOZp-n")} className="ml-1 text-xl text-indigo-300 hover:text-indigo-700 transition-colors duration-300" />
                                                     </span>
                                                 } />
                   {/* Text box to input desired year (e.g. 2026) */}
