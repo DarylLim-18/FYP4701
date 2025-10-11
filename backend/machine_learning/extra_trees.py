@@ -85,27 +85,33 @@ def run_extra_trees_regressor(data, feature_cols, target_col='CURRENT PREVALENCE
     print(f"Mean Squared Error: {mse:.2f}")
     print(f"R² Score: {r2:.2f}")
 
-    #Predicted vs Actual
-    plt.figure(figsize=(8, 6), num='Extra Trees Regression')
-    plt.scatter(y_test, y_pred, alpha=0.6, label="Predictions")
-    plt.plot([y.min(), y.max()], [y.min(), y.max()], 'r--', label="Ideal Fit")
-    plt.xlabel("Actual Prevalence")
-    plt.ylabel("Predicted Prevalence")
-    plt.title("Extra Trees Regression: Actual vs Predicted Asthma Prevalence")
-    plt.legend()
-    plt.grid(True)
-    plt.tight_layout()
-    plt.show()
+    fig, axs = plt.subplots(1, 2, figsize=(14, 6))
+    fig.suptitle("Extra Trees Regression Analysis", fontsize=16)
 
-    # Feature
+    # --- 1. Actual vs Predicted ---
+    axs[0].scatter(y_test, y_pred, alpha=0.6, label="Predictions")
+    y_min, y_max = min(y_test.min(), y_pred.min()), max(y_test.max(), y_pred.max())
+    axs[0].plot([y_min, y_max], [y_min, y_max], 'r--', label="Ideal Fit")
+    axs[0].set_xlabel("Actual Prevalence")
+    axs[0].set_ylabel("Predicted Prevalence")
+    axs[0].set_title("Actual vs Predicted")
+    axs[0].legend()
+    axs[0].grid(True)
+
+    # --- 2. Feature Importances ---
     importances = model.feature_importances_
-    plt.figure(figsize=(8, 6), num='Feature Importances')
-    plt.barh(feature_cols, importances)
-    plt.xlabel("Importance Score")
-    plt.ylabel("Features")
-    plt.title("Extra Trees Regressor - Feature Importances")
-    plt.tight_layout()
-    plt.show()
+    axs[1].barh(feature_cols, importances)
+    axs[1].set_xlabel("Feature Importance")
+    axs[1].set_title("Feature Importance")
+
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+
+
+    buf = io.BytesIO()
+    plt.savefig(buf, format="png", bbox_inches='tight')
+    plt.close(fig)
+    buf.seek(0)
+    image_base64 = base64.b64encode(buf.read()).decode("utf-8")
 
     # Return results
     res = {
@@ -113,6 +119,7 @@ def run_extra_trees_regressor(data, feature_cols, target_col='CURRENT PREVALENCE
         "Features Used": feature_cols,
         "Mean Squared Error": mse,
         "R² score": r2,
+        "PlotImage": image_base64,
     }
 
     return res

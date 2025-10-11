@@ -137,8 +137,8 @@ def run_linear_regression(data, feature_cols, target_col):
         "Features Used": feature_cols,
         "Mean Squared Error": mse,
         "R² score": r2,
-        "Coefficients": model.coef_.tolist(),
-        "Intercept": model.intercept_,
+        "Coefficients": [[float(f"{c:.2g}") for c in model.coef_]],
+        "Intercept": float(f"{model.intercept_:.2g}"),
         "PlotImage": image_base64, 
     }
 

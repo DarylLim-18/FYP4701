@@ -183,8 +183,8 @@ def run_logistic_regression(data, feature_cols, target_col='CURRENT PREVALENCE',
         "Threshold": threshold,
         "Accuracy": acc,
         "Classification Report": report,
-        "Coefficients": model.coef_.tolist(),
-        "Intercept": model.intercept_.tolist(),
+        "Coefficients": [[round(float(c), 2) for c in coef_row] for coef_row in model.coef_],
+        "Intercept": [round(float(i), 2) for i in model.intercept_],
         "PlotImage": image_base64,
     }
 

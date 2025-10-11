@@ -121,9 +121,9 @@ def run_rf_model(data, feature_cols, target_col='CURRENT_PREVALENCE'):
 
     # Show worst residuals
     residual_df = pd.DataFrame({
-        'Actual': y_test,
-        'Predicted': y_pred,
-        'Residual': residuals
+        'Actual': np.round(y_test, 2),
+        'Predicted': np.round(y_pred, 2),
+        'Residual': np.round(residuals, 2)
     })
     print("\n--- Worst Residuals (Top 5) ---")
     print(residual_df.reindex(residuals.abs().sort_values(ascending=False).index).head())
