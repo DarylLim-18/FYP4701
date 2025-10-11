@@ -29,6 +29,8 @@ from backend.machine_learning.extra_trees import run_extra_trees_regressor
 from backend.machine_learning.elastic_net import run_elastic_net_regression
 from backend.machine_learning.kNN import run_knn_classifier
 
+# Import forecasting functions
+from backend.training.forecasting import run_forecast
 
 app = FastAPI()
 app.add_middleware(
@@ -103,11 +105,11 @@ def join_layers(
     join_by: str = "code",
     join_key: str | None = None,
     country_iso3: str | None = None,
-    country_col: str = "country",
-    state_col: str = "state",
-    county_col: str = "county",
-    lon_col: str = "lon",
-    lat_col: str = "lat",
+    country_col: str | None = "country",
+    state_col: str | None = "state",
+    county_col: str | None = "county",
+    lon_col: str | None = "lon",
+    lat_col: str | None = "lat",
     ):
     
     if country_iso3:
@@ -254,6 +256,97 @@ def upsert_cache(cache_id: int, cache_name: str, geojson_obj: dict):
     finally:
         conn.close()
 
+def upload_asthmageo_data(year: str, geojson_obj: dict):
+    conn = psycopg2.connect(
+        dbname=os.getenv("PG_DB", "postgres"),
+        user=os.getenv("PG_USER", "postgres"),
+        password=os.getenv("PG_PASSWORD", "hanikodi4701!"),  # move to env var
+        host=os.getenv("PG_HOST", "localhost"),
+        port=os.getenv("PG_PORT", "5432"),
+    )
+    try:
+        with conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO asthma_geodata (asthmageo_id, asthmageo_name, asthmageo_data)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (asthmageo_id) DO NOTHING
+                RETURNING asthmageo_id;
+                """,
+                (year, f"asthma_forecast_{year}", Json(geojson_obj)),
+            )
+            inserted = cur.fetchone()  # None if DO NOTHING triggered
+            print(f"Saved: {year}")
+            return bool(inserted)  # True = saved, False = already existed
+    finally:
+        conn.close()
+        
+        
+def run_lisa_forecast(
+    df: DataFrame,
+    name: str,
+    level: str= "adm1",
+    variable: str ="Predicted Asthma Prevalence %",
+    # join options
+    join_by: str = "name",
+    country_col: str = "Country",
+    state_col: str = "State",
+    # analysis options
+    wtype: str = "queen",
+    k: int | None = None,
+    perm: int = 499,
+    alpha: float =0.05,
+    simplify_tol: float | None = 0.01,
+):
+    
+
+    gdf = gpd.read_file(GPKG_PATHS[level])
+    mapping = COLUMN_MAPPINGS[level]
+    bcode, bname, alias = mapping["code"], mapping["name"], mapping["alias"]
+    gdf = gdf.rename(columns={bcode: "code", bname: "name"})
+
+    if gdf.crs is None:
+        gdf.set_crs(4326, inplace=True)
+    else:
+        gdf = gdf.to_crs(4326)
+    gdf["geometry"] = gdf.geometry.buffer(0)
+
+    # join user data onto polygons
+    try:
+        merged = join_layers(
+            gdf=gdf, df=df, level=level, variable=variable,
+            join_by=join_by, join_key=None, country_iso3=None,
+            country_col=country_col, state_col=state_col, county_col=None,
+            lon_col=None, lat_col=None
+        )
+    except ValueError as ve:
+        raise HTTPException(400, detail=str(ve))
+
+    # run Local Moran in an independent function
+    try:
+        result = local_moran(
+            merged, variable,
+            wtype=wtype, k=k, perm=perm, alpha=alpha
+        )
+    except ValueError as ve:
+        raise HTTPException(400, detail=str(ve))
+
+    # optional simplify for web payload
+    if simplify_tol:
+        result["geometry"] = result.geometry.simplify(simplify_tol, preserve_topology=True)
+
+    # rename name -> alias (country/state/county) for output
+    result = result.rename(columns={"name": alias})
+
+    cols = ["code", alias, variable, "local_I", "p_value", "cluster_label", "geometry"]
+    geojson = result[cols].to_json()
+    geojson_obj = json.loads(geojson)
+    
+    upload_asthmageo_data(name, geojson_obj)
+    return 1
+
+
+
 load_dotenv()
 
 DB_NAME = os.environ["DB_NAME"]
@@ -297,6 +390,7 @@ async def run_lisa(
     perm: int = Form(499),
     alpha: float = Form(0.05),
     simplify_tol: float | None = Form(0.01),
+    cache: bool = True,
 ):
     """
     This function performs LISA analysis on the provided data and returns the results.
@@ -400,10 +494,20 @@ async def run_lisa(
     cols = ["code", alias, variable, "local_I", "p_value", "cluster_label", "geometry"]
     geojson = result[cols].to_json()
     geojson_obj = json.loads(geojson)
-    upsert_cache(1, "lisa-latest.geojson", geojson_obj)
-    
+    if cache:
+        upsert_cache(1, "lisa-latest.geojson", geojson_obj)
     return Response(content=geojson, media_type="application/geo+json")
     
+@app.post("/forecast")
+async def forecast(start: int = Form(2025, description="Starting year to begin forecasting from"), 
+                    end: int = Form(2027, description="End year to stop forecasting at")):
+    try:
+        result = run_forecast(start_year= start, end_year=end)
+        for i, obj in enumerate(result["per_year_frames"]):
+            run_lisa_forecast(df=obj, name=result["years"][i])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+        
 
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
@@ -462,6 +566,45 @@ def get_cache():
         return Response(content=None)
     finally:
         conn.close()
+
+
+@app.get("/get_forecasted_asthma/{year}")
+async def get_forecasted_asthma(year: int = Path(..., description="Year of the data")):
+    conn = psycopg2.connect(
+        dbname="postgres", 
+        user="postgres", 
+        password="hanikodi4701!",
+        host="localhost",
+        port="5432"
+    )
+    try:
+        with conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT asthmageo_name, asthmageo_data FROM asthma_geodata WHERE asthmageo_id=%s
+                """, 
+                (year,))
+            row = cur.fetchone()
+            if not row:
+                raise HTTPException(status_code=404, detail="Data not found")
+            name, data = row
+            return Response(content=json.dumps(data), media_type="application/geo+json")
+    finally:
+        conn.close()
+        
+@app.get("/list_asthma")
+async def list_asthma_geodata():
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT asthmageo_id, asthmageo_name FROM asthma_geodata")
+        files = cur.fetchall()
+        cur.close()
+        conn.close()
+
+        return [{"id": f[0], "Geodata Name": f[1]} for f in files]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 
@@ -547,6 +690,8 @@ def get_csv_headers(file_id: int):
     finally:
         if 'cur' in locals(): cur.close()
         if 'conn' in locals(): conn.close()
+        
+        
 
 @app.get("/preview/{file_id}")
 def preview_file(
