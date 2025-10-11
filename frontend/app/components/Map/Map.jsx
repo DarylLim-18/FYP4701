@@ -4,6 +4,8 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useEffect, useMemo, useState, useRef } from 'react';
 import { FiPlay, FiBarChart2, FiAlertCircle } from 'react-icons/fi';
+import { FaStarOfDavid } from "react-icons/fa6";
+import { BsStars } from "react-icons/bs";
 
 // Fix default icon paths
 delete L.Icon.Default.prototype._getIconUrl;
@@ -13,7 +15,60 @@ L.Icon.Default.mergeOptions({
   shadowUrl:     'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
+const POSITIVE_COLORS = [
+"#f2fdaa",
+"#efed8c",
+"#eedc6f",
+"#efca53",
+"#f1b639",
+"#f4a11f",
+"#f78a00",
+"#fb6f00",
+"#fd4d00",
+"#ff0808ff"
+];
+const NEGATIVE_COLORS = [
+"#1b9ae4",
+"#00bddd",
+"#41d9c3",
+"#9feeac"
+];
+const DEFAULT_COLOR = "#FFEDA0";
+const numberFormatter = new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 });
 
+function colorFromScale(value, start, end, colors) {
+  const range = end - start;
+  if (!Number.isFinite(range) || range <= 0) {
+    return colors[colors.length - 1] ?? DEFAULT_COLOR;
+  }
+
+  const ratio = (value - start) / range;
+  const clampedRatio = Math.max(0, Math.min(0.999999, ratio));
+  const idx = Math.floor(clampedRatio * colors.length);
+  return colors[idx] ?? colors[colors.length - 1] ?? DEFAULT_COLOR;
+}
+
+function colorFor(value, min, max) {
+  if (!Number.isFinite(value)) return DEFAULT_COLOR;
+  if (!Number.isFinite(min) || !Number.isFinite(max)) return DEFAULT_COLOR;
+  if (min === max) {
+    const positiveTerminal = POSITIVE_COLORS[POSITIVE_COLORS.length - 1] ?? DEFAULT_COLOR;
+    const negativeTerminal = NEGATIVE_COLORS[0] ?? DEFAULT_COLOR;
+    return value >= 0 ? positiveTerminal : negativeTerminal;
+  }
+
+  if (value < 0 && min < 0) {
+    const negStart = min;
+    const negEnd = Math.min(max, 0);
+    if (negEnd > negStart) {
+      return colorFromScale(value, negStart, negEnd, NEGATIVE_COLORS);
+    }
+  }
+
+  const posStart = min >= 0 ? min : 0;
+  const posEnd = Math.max(max, posStart);
+  return colorFromScale(Math.max(value, posStart), posStart, posEnd, POSITIVE_COLORS);
+}
 // const VARIABLE = "Avg PM2.5"
 // const PATH = "geojsons/lisa-1.geojson"
 const COLUMN_NAME = "county"
@@ -22,7 +77,13 @@ const COLUMN_NAME = "county"
 const typeOfPrevalence = ['current', 'lifetime'];
 
 // Get all prevalence years
-const prevalenceYears = ["2015-2016", "2017-2018", "2019-2020", "2021-2022"];
+const prevalenceYears = [
+  "2015-2016",
+  "2017-2018",
+  "2019-2020",
+  "2021-2022",
+  "Others (Predictive)"
+];
 
 // Get max value of selected variable
 const getMaxValue = (data, variableName) => {
@@ -62,34 +123,60 @@ function ChoroplethLayer({ data, setInfo, onLoad, selectedVariable, maxValue}) {
   const geoJsonRef = useRef();
 
   // Style function for polygons
+//   const style = (feature) => {
+//     const v = feature?.properties?.[selectedVariable];
+//     return {
+//       fillColor: getColor(v, maxValue),
+//       weight: 1,
+//       opacity: 1,
+//       color: 'white',
+//       dashArray: '3',
+//       fillOpacity: 0.7,
+//     };
+//   };
   const style = (feature) => {
-    const v = feature?.properties?.[selectedVariable];
+    const v = Number(feature?.properties?.[selectedVariable]);
     return {
-      fillColor: getColor(v, maxValue),
+      fillColor: colorFor(v, 0, maxValue), // Start with just positive values
       weight: 1,
       opacity: 1,
-      color: 'white',
-      dashArray: '3',
-      fillOpacity: 0.2,
+      color: "#888", // Changed to gray
+      dashArray: "2", // Changed to match friend's
+      fillOpacity: 0.25 // More transparent
     };
   };
 
+//   const highlightFeature = (e) => {
+//     const layer = e.target;
+//     layer.setStyle({
+//       weight: 5,
+//       color: '#666',
+//       dashArray: '',
+//       fillOpacity: 0.7
+//     });
+//     setInfo(layer.feature.properties);
+    
+//     setTimeout(() => layer.bringToFront(), 1); // Delays highlight so that it is brought to front after updating info control.
+//   };
   const highlightFeature = (e) => {
     const layer = e.target;
     layer.setStyle({
-      weight: 5,
-      color: '#666',
-      dashArray: '',
-      fillOpacity: 0.7
+      weight: 3, // Thinner than yours
+      color: "#222", // Darker border
+      dashArray: "", // Solid border
+      fillOpacity: 0.6 // Less opaque than yours
     });
     setInfo(layer.feature.properties);
-    
-    setTimeout(() => layer.bringToFront(), 1); // Delays highlight so that it is brought to front after updating info control.
+  
+    if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+      layer.bringToFront(), 1;
+    }
   };
 
   const resetHighlight = (e) => {
-    // Use the style function to reset instead of relying on react-leaflet's reset
-    geoJsonRef.current.resetStyle(e.target);
+    if (geoJsonRef.current) {
+      geoJsonRef.current.resetStyle(e.target);
+    }
     setInfo(null);
   };
 
@@ -108,13 +195,13 @@ function ChoroplethLayer({ data, setInfo, onLoad, selectedVariable, maxValue}) {
 
   // Create a ref to access the GeoJSON layer instance
   useEffect(() => {
-    if (geoJsonRef.current && data) {
-      // Store the layer instance for use in event handlers
-      geoJsonRef.current = geoJsonRef.current.leafletElement;
+    // if (geoJsonRef.current && data) {
+    //   // Store the layer instance for use in event handlers
+    //   geoJsonRef.current = geoJsonRef.current.leafletElement;
 
-      // Notify parent that the layer has been loaded
-      if (onLoad) onLoad();
-    }
+    //   // Notify parent that the layer has been loaded
+    //   if (onLoad) onLoad();
+    // }
   }, [data, setInfo, onLoad, selectedVariable, maxValue]);
 
   return data ? (
@@ -157,13 +244,42 @@ const InfoControl = ({ info, selectedVariable }) => {
     );
   };
 
+function formatRange(from, to) {
+  if (!Number.isFinite(from) || !Number.isFinite(to)) return "—";
+  return `${numberFormatter.format(from)}–${numberFormatter.format(to)}`;
+}
+
 // Legend (bottom-right)
-const Legend = ({ maxValue }) => {
-  const values = 5;
-  const step = maxValue / values;
+const Legend = ({ minValue, maxValue }) => {
 
   // Generate bin starts without rounding to avoid duplicate values
-  const grades = Array.from({ length: values }, (_, i) => i * step);
+  const segments = [];
+
+  if (minValue < 0) {
+    const negStart = minValue;
+    const negEnd = Math.min(maxValue, 0);
+    if (negEnd > negStart) {
+      const negStep = (negEnd - negStart) / NEGATIVE_COLORS.length;
+      for (let i = 0; i < NEGATIVE_COLORS.length; i += 1) {
+        const from = negStart + i * negStep;
+        const to = i === NEGATIVE_COLORS.length - 1 ? negEnd : negStart + (i + 1) * negStep;
+        segments.push({ color: NEGATIVE_COLORS[i], from, to });
+      }
+    }
+  }
+
+  if (maxValue > 0) {
+    const posStart = minValue >= 0 ? minValue : 0;
+    const posEnd = Math.max(maxValue, posStart);
+    if (posEnd > posStart) {
+      const posStep = (posEnd - posStart) / POSITIVE_COLORS.length;
+      for (let i = 0; i < POSITIVE_COLORS.length; i += 1) {
+        const from = posStart + i * posStep;
+        const to = i === POSITIVE_COLORS.length - 1 ? posEnd : posStart + (i + 1) * posStep;
+        segments.push({ color: POSITIVE_COLORS[i], from, to });
+      }
+    }
+  }
 
   const fmt = (n) =>
     Number.isFinite(n) ? new Intl.NumberFormat().format(Math.round(n)) : n;
@@ -182,25 +298,43 @@ const Legend = ({ maxValue }) => {
           margin: "15px",
         }}
       >
-        {grades.map((from, i) => {
-          const to = i < grades.length - 1 ? grades[i + 1] : maxValue;
-          return (
-            <div key={`bin-${i}`}>
-              <i
-                style={{
-                  background: getColor(from + step * 0.5, maxValue),
-                  width: 18,
-                  height: 18,
-                  float: "left",
-                  marginRight: 8,
-                  opacity: 0.7,
-                }}
-              />
-              {fmt(from)}–{i < grades.length - 1 ? fmt(to) : fmt(maxValue)} 
-              {i === grades.length - 1 ? "+" : ""}
-            </div>
-          );
-        })}
+      {segments.length > 0 && (
+        <div className="leaflet-bottom leaflet-right" style={{ zIndex: 400 }}>
+          <div
+            className="info legend"
+            style={{
+              background: "rgba(255,255,255,0.85)",
+              padding: "8px",
+              borderRadius: "5px",
+              border: "1px solid #ccc",
+              lineHeight: "18px",
+            //   // dynamically adjust width based on content
+            //   maxWidth: "200px",
+            //   minWidth: "100px",
+              whiteSpace: "nowrap",
+              color: "#333",
+              margin: "15px",
+              fontSize: "12px",
+            }}
+          >
+            {segments.map(({ color, from, to }, idx) => (
+              <div key={idx} style={{ display: "flex", alignItems: "center", marginBottom: "4px" }}>
+                <i
+                  style={{
+                    background: color,
+                    width: 18,
+                    height: 18,
+                    marginRight: 8,
+                    opacity: 0.7,
+                    display: "inline-block",
+                  }}
+                />
+                {formatRange(from, to)}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       </div>
     </div>
   );
@@ -214,6 +348,7 @@ function LabelDot({ color, text }) {
     "blue-400": "bg-blue-400",
     "purple-400": "bg-purple-400",
     "orange-400": "bg-orange-400",
+    "rose-400": "bg-rose-400",
   }[color] || "bg-gray-400";
 
   return (
@@ -302,6 +437,7 @@ export default function Map() {
 const handleConfirm = () => {
   setIsLoading(true);
   setConfirmedSelections(true);
+  setInfo(null); // Reset info on new load
   
   console.log('Fetching GeoJSON from:', getGeoJsonPath());
   fetch(getGeoJsonPath())
@@ -338,8 +474,10 @@ const handleConfirmWithDelay = async () => {
   handleConfirm();
 };
 
+const [selectedOthers, setSelectedOthers] = useState("");
+
   return (
-    <div className="h-full overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
+    <div className="h-full overflow-hidden bg-gray-900/60 rounded-2xl shadow-xl text-white">
       <main className="h-full grid grid-cols-1 lg:grid-cols-4 gap-6 p-6 overflow-hidden">
         {/* Controls */}
         <div className="min-h-0 p-6 space-y-6 border border-white/10 rounded-2xl shadow-xl bg-white/5">
@@ -348,10 +486,13 @@ const handleConfirmWithDelay = async () => {
               <div className="space-y-3">
                 <LabelDot color="indigo-400" text="Prevalence Type" />
                 <StyledSelect
-                  label="Type of Prevalence"
-                  options={typeOfPrevalence}
-                  value={selectedPrevalence}
-                  onChange={(e) => setSelectedPrevalence(e.target.value)}
+                label="Type of Prevalence"
+                options={typeOfPrevalence}
+                value={selectedPrevalence}
+                onChange={(e) => {
+                    setSelectedPrevalence(e.target.value);
+                    setInfo(null); // Reset info when changing selection
+                }}
                 />
               </div>
 
@@ -362,9 +503,40 @@ const handleConfirmWithDelay = async () => {
                   label="Year Range"
                   options={prevalenceYears}
                   value={selectedYear}
-                  onChange={(e) => setSelectedYear(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedYear(e.target.value);
+                    setInfo(null); // Reset info when changing selection
+                  }}
                 />
               </div>
+
+            {/* Show additional options if "Others (Predictive)" is selected */}
+              {selectedYear === prevalenceYears[prevalenceYears.length - 1] && (
+                <div className="space-y-3">
+                  <LabelDot color="rose-400" text={
+                                                    <span className="inline-flex items-center whitespace-nowrap">
+                                                    Other Years  <BsStars className="ml-1 text-xl" />
+                                                    </span>
+                                                } />
+                  {/* Text box to input desired year (e.g. 2026) */}
+                    <input
+                      type="text"
+                      value={selectedOthers}
+                      onChange={(e) => setSelectedOthers(e.target.value)}
+                      placeholder="Enter year (e.g. 2026)"
+                      className="w-full p-2 border border-white/10 rounded-lg bg-transparent focus:outline-none"
+                    />
+                  {/* <StyledSelect
+                    label="Select Other Years"
+                    options={["2023-2024", "2025-2026", "2027-2028", "2029-2030"]}
+                    value={selectedOthers}
+                    onChange={(e) => {
+                      setSelectedOthers(e.target.value);
+                      setInfo(null); // Reset info when changing selection
+                    }}
+                  /> */}
+                </div>
+              )}
 
               {/* Confirm Button */}
               <div className="pt-4 border-t border-white/10">
@@ -400,6 +572,7 @@ const handleConfirmWithDelay = async () => {
         ) : (
         // Your map component here
         <MapContainer
+        key={`${selectedPrevalence}-${selectedYear}`} // 🚨 ADD THIS - forces remount
         center={defaultCenter}
         zoom={defaultZoom}
         scrollWheelZoom
