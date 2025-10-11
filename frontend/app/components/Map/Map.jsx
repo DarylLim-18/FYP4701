@@ -476,6 +476,10 @@ const handleConfirmWithDelay = async () => {
 
 const [selectedOthers, setSelectedOthers] = useState("");
 
+  const clickRick = () => {
+    window.open("https://youtu.be/dQw4w9WgXcQ?si=n8-YzA4eBiVOZp-n", "_blank", "noopener,noreferrer");
+  };
+
   return (
     <div className="h-full overflow-hidden bg-gray-900/60 rounded-2xl shadow-xl text-white">
       <main className="h-full grid grid-cols-1 lg:grid-cols-4 gap-6 p-6 overflow-hidden">
@@ -515,7 +519,9 @@ const [selectedOthers, setSelectedOthers] = useState("");
                 <div className="space-y-3">
                   <LabelDot color="rose-400" text={
                                                     <span className="inline-flex items-center whitespace-nowrap">
-                                                    Other Years  <BsStars className="ml-1 text-xl" />
+                                                    Other Years  
+                                                    {/* brings you to youtube upon clicking */}
+                                                    <BsStars onClick={clickRick} className="ml-1 text-xl text-indigo-300 hover:text-indigo-700 transition-colors duration-300" />
                                                     </span>
                                                 } />
                   {/* Text box to input desired year (e.g. 2026) */}
