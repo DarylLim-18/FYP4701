@@ -2,10 +2,12 @@
 import { MapContainer, TileLayer, useMap, Marker, Popup, GeoJSON } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { useEffect, useMemo, useState, useRef } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { FiPlay, FiBarChart2, FiAlertCircle } from 'react-icons/fi';
 import { FaStarOfDavid } from "react-icons/fa6";
 import { BsStars, BsClockHistory, BsGraphUpArrow } from "react-icons/bs";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
 
 // Fix default icon paths
 delete L.Icon.Default.prototype._getIconUrl;
@@ -69,6 +71,105 @@ function colorFor(value, min, max) {
   const posEnd = Math.max(max, posStart);
   return colorFromScale(Math.max(value, posStart), posStart, posEnd, POSITIVE_COLORS);
 }
+
+function buildLegendSegments(min, max) {
+  if (!Number.isFinite(min) || !Number.isFinite(max)) return [];
+
+  if (min === max) {
+    const positiveTerminal = POSITIVE_COLORS[POSITIVE_COLORS.length - 1] ?? DEFAULT_COLOR;
+    const negativeTerminal = NEGATIVE_COLORS[0] ?? DEFAULT_COLOR;
+    return [{
+      color: min >= 0 ? positiveTerminal : negativeTerminal,
+      from: min,
+      to: max,
+    }];
+  }
+
+  const segments = [];
+
+  if (min < 0) {
+    const negStart = min;
+    const negEnd = Math.min(max, 0);
+    if (negEnd > negStart) {
+      const negStep = (negEnd - negStart) / NEGATIVE_COLORS.length;
+      for (let i = 0; i < NEGATIVE_COLORS.length; i += 1) {
+        const from = negStart + i * negStep;
+        const to = i === NEGATIVE_COLORS.length - 1 ? negEnd : negStart + (i + 1) * negStep;
+        segments.push({ color: NEGATIVE_COLORS[i], from, to });
+      }
+    }
+  }
+
+  if (max > 0) {
+    const posStart = min >= 0 ? min : 0;
+    const posEnd = Math.max(max, posStart);
+    if (posEnd > posStart) {
+      const posStep = (posEnd - posStart) / POSITIVE_COLORS.length;
+      for (let i = 0; i < POSITIVE_COLORS.length; i += 1) {
+        const from = posStart + i * posStep;
+        const to = i === POSITIVE_COLORS.length - 1 ? posEnd : posStart + (i + 1) * posStep;
+        segments.push({ color: POSITIVE_COLORS[i], from, to });
+      }
+    }
+  }
+
+  return segments;
+}
+
+function labelFromProps(props, preferredKey) {
+  if (!props) return "—";
+  const candidates = [
+    preferredKey,
+    "county",
+    "County",
+    "state",
+    "State",
+    "name",
+    "NAME",
+    "Name",
+    "shapeName",
+    "ShapeName",
+    "shape_name",
+    "admin2Name",
+    "admin1Name",
+    "admin0Name",
+    "code",
+    "GEOID",
+    "geoid",
+    "id",
+    "ID",
+  ].filter(Boolean);
+
+  for (const key of candidates) {
+    const value = props[key];
+    if (value != null && String(value).trim() !== "") {
+      return String(value);
+    }
+  }
+  return "—";
+}
+
+function validateForecastYear(rawValue) {
+  const trimmed = (rawValue ?? "").trim();
+  if (trimmed.length === 0) {
+    return "Enter a forecast year.";
+  }
+
+  const year = Number.parseInt(trimmed, 10);
+  if (!Number.isFinite(year)) {
+    return "Enter a numeric year (e.g. 2026).";
+  }
+
+  if (trimmed.length !== String(year).length) {
+    return "Enter a numeric year without extra characters.";
+  }
+
+  if (year < 2025) {
+    return "Forecasts start at 2025. Choose 2025 or later.";
+  }
+
+  return null;
+}
 // const VARIABLE = "Avg PM2.5"
 // const PATH = "geojsons/lisa-1.geojson"
 const COLUMN_NAME = "county"
@@ -85,137 +186,86 @@ const prevalenceYears = [
   "Others (Predictive)"
 ];
 
-// Get max value of selected variable
-const getMaxValue = (data, variableName) => {
-  if (!data || !data.features) return 0;
-  
-  const values = data.features
-    .map(f => {
-      const value = f.properties?.[variableName];
-      return typeof value === 'number' ? value : 
-             typeof value === 'string' ? parseFloat(value) : 0;
-    })
-    .filter(v => !isNaN(v));
-  
-  return values.length > 0 ? Math.max(...values) : 0;
+// Get min/max for a selected variable
+const getDataExtents = (data, variableName) => {
+  let min = Number.POSITIVE_INFINITY;
+  let max = Number.NEGATIVE_INFINITY;
+
+  for (const feature of data?.features ?? []) {
+    const raw = feature?.properties?.[variableName];
+    const value = typeof raw === "number" ? raw : typeof raw === "string" ? parseFloat(raw) : NaN;
+    if (Number.isFinite(value)) {
+      if (value < min) min = value;
+      if (value > max) max = value;
+    }
+  }
+
+  return {
+    min: Number.isFinite(min) ? min : 0,
+    max: Number.isFinite(max) ? max : 0,
+  };
 };
 
 
-  // Color scale
-const getColor = (d, maxValue) => {
-  if (!maxValue || maxValue === 0) return '#FFEDA0';
-  const step = maxValue / 5;
-//   console.log('Step value:', 4 * step);
-  
-  return d > 4 * step ? '#800026' :
-         d > 3 * step ? '#E31A1C' :
-         d > 2 * step ? '#FD8D3C' :
-         d > 1 * step ? '#FEB24C' :
-         d > 0        ? '#FED976' :
-                        '#FFEDA0';
-};
+const defaultCenter = [37.1841, -119.4696];
+const defaultZoom = 6;
 
-const defaultCenter = [37.1841, -119.4696]
-const defaultZoom = 6
-// --- Choropleth layer ---
-function ChoroplethLayer({ data, setInfo, onLoad, selectedVariable, maxValue}) {
+function ChoroplethLayer({ data, setInfo, selectedVariable, minValue, maxValue }) {
   const map = useMap();
-  const geoJsonRef = useRef();
 
-  // Style function for polygons
-//   const style = (feature) => {
-//     const v = feature?.properties?.[selectedVariable];
-//     return {
-//       fillColor: getColor(v, maxValue),
-//       weight: 1,
-//       opacity: 1,
-//       color: 'white',
-//       dashArray: '3',
-//       fillOpacity: 0.7,
-//     };
-//   };
-  const style = (feature) => {
-    const v = Number(feature?.properties?.[selectedVariable]);
-    return {
-      fillColor: colorFor(v, 0, maxValue), // Start with just positive values
-      weight: 1,
-      opacity: 1,
-      color: "#888", // Changed to gray
-      dashArray: "2", // Changed to match friend's
-      fillOpacity: 0.25 // More transparent
-    };
-  };
+  const styleFn = useCallback(
+    (feature) => {
+      const v = Number(feature?.properties?.[selectedVariable]);
+      return {
+        fillColor: colorFor(v, minValue, maxValue),
+        weight: 1,
+        opacity: 1,
+        color: "#888",
+        dashArray: "2",
+        fillOpacity: 0.25,
+      };
+    },
+    [selectedVariable, minValue, maxValue]
+  );
 
-//   const highlightFeature = (e) => {
-//     const layer = e.target;
-//     layer.setStyle({
-//       weight: 5,
-//       color: '#666',
-//       dashArray: '',
-//       fillOpacity: 0.7
-//     });
-//     setInfo(layer.feature.properties);
-    
-//     setTimeout(() => layer.bringToFront(), 1); // Delays highlight so that it is brought to front after updating info control.
-//   };
-  const highlightFeature = (e) => {
-    const layer = e.target;
-    layer.setStyle({
-      weight: 3, // Thinner than yours
-      color: "#222", // Darker border
-      dashArray: "", // Solid border
-      fillOpacity: 0.6 // Less opaque than yours
-    });
-    setInfo(layer.feature.properties);
-  
-    if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
-      layer.bringToFront(), 1;
-    }
-  };
+  const onEachFeature = useCallback(
+    (feature, layer) => {
+      layer.on({
+        mouseover: (e) => {
+          const targetLayer = e.target;
+          targetLayer.setStyle({
+            weight: 3,
+            color: "#222",
+            dashArray: "",
+            fillOpacity: 0.6,
+          });
+          setInfo(feature.properties);
+          if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+            targetLayer.bringToFront();
+          }
+        },
+        mouseout: (e) => {
+          const targetLayer = e.target;
+          targetLayer.setStyle(styleFn(feature));
+          setInfo(null);
+        },
+        click: (e) => {
+          map.fitBounds(e.target.getBounds());
+        },
+      });
+    },
+    [map, setInfo, styleFn]
+  );
 
-  const resetHighlight = (e) => {
-    if (geoJsonRef.current) {
-      geoJsonRef.current.resetStyle(e.target);
-    }
-    setInfo(null);
-  };
-
-  const zoomToFeature = (e) => {
-    map.fitBounds(e.target.getBounds());
-  };
-
-  // Proper hover highlight + reset
-  const onEachFeature = (feature, layer) => {
-    layer.on({
-      mouseover: highlightFeature,
-      mouseout: resetHighlight,
-      click: zoomToFeature
-    });
-  };
-
-  // Create a ref to access the GeoJSON layer instance
-  useEffect(() => {
-    // if (geoJsonRef.current && data) {
-    //   // Store the layer instance for use in event handlers
-    //   geoJsonRef.current = geoJsonRef.current.leafletElement;
-
-    //   // Notify parent that the layer has been loaded
-    //   if (onLoad) onLoad();
-    // }
-  }, [data, setInfo, onLoad, selectedVariable, maxValue]);
-
-  return data ? (
-    <GeoJSON 
-      ref={geoJsonRef}
-      data={data} 
-      style={style} 
-      onEachFeature={onEachFeature} 
-    />
-  ) : null;
+  return data ? <GeoJSON data={data} style={styleFn} onEachFeature={onEachFeature} /> : null;
 }
 
 // Info Control (top right hover box)
-const InfoControl = ({ info, selectedVariable }) => {
+const InfoControl = ({ info, selectedVariable, columnPreference }) => {
+  const label = useMemo(() => labelFromProps(info, columnPreference), [info, columnPreference]);
+  const value = Number(info?.[selectedVariable]);
+  const formattedValue = Number.isFinite(value) ? `${Math.round(value * 100) / 100}%` : "—";
+
   return (
     <div className="leaflet-top leaflet-right">
       <div
@@ -232,9 +282,9 @@ const InfoControl = ({ info, selectedVariable }) => {
           <h4 style={{ margin: "0 0 5px", color: "#777" }}>{selectedVariable}</h4>
           {info ? (
             <div style={{ color: "#000000"}}>
-              <b>{info?.county || info?.NAME || info?.name || 'Unknown Region'}</b>
+              <b>{label}</b>
               <br />
-              {Math.round(info[selectedVariable] * 100) / 100}%
+              {formattedValue}
             </div>
           ) : (
             <div style={{ color: "#000000"}}>Hover over a region</div>
@@ -252,37 +302,9 @@ function formatRange(from, to) {
 // Legend (bottom-right)
 const Legend = ({ minValue, maxValue }) => {
 
-  // Generate bin starts without rounding to avoid duplicate values
-  const segments = [];
+  const segments = useMemo(() => buildLegendSegments(minValue, maxValue), [minValue, maxValue]);
 
-  if (minValue < 0) {
-    const negStart = minValue;
-    const negEnd = Math.min(maxValue, 0);
-    if (negEnd > negStart) {
-      const negStep = (negEnd - negStart) / NEGATIVE_COLORS.length;
-      for (let i = 0; i < NEGATIVE_COLORS.length; i += 1) {
-        const from = negStart + i * negStep;
-        const to = i === NEGATIVE_COLORS.length - 1 ? negEnd : negStart + (i + 1) * negStep;
-        segments.push({ color: NEGATIVE_COLORS[i], from, to });
-      }
-    }
-  }
-
-  if (maxValue > 0) {
-    const posStart = minValue >= 0 ? minValue : 0;
-    const posEnd = Math.max(maxValue, posStart);
-    if (posEnd > posStart) {
-      const posStep = (posEnd - posStart) / POSITIVE_COLORS.length;
-      for (let i = 0; i < POSITIVE_COLORS.length; i += 1) {
-        const from = posStart + i * posStep;
-        const to = i === POSITIVE_COLORS.length - 1 ? posEnd : posStart + (i + 1) * posStep;
-        segments.push({ color: POSITIVE_COLORS[i], from, to });
-      }
-    }
-  }
-
-  const fmt = (n) =>
-    Number.isFinite(n) ? new Intl.NumberFormat().format(Math.round(n)) : n;
+  if (segments.length === 0) return null;
 
   return (
     <div className="leaflet-bottom leaflet-right">
@@ -298,43 +320,21 @@ const Legend = ({ minValue, maxValue }) => {
           margin: "15px",
         }}
       >
-      {segments.length > 0 && (
-        <div className="leaflet-bottom leaflet-right" style={{ zIndex: 400 }}>
-          <div
-            className="info legend"
-            style={{
-              background: "rgba(255,255,255,0.85)",
-              padding: "8px",
-              borderRadius: "5px",
-              border: "1px solid #ccc",
-              lineHeight: "18px",
-            //   // dynamically adjust width based on content
-            //   maxWidth: "200px",
-            //   minWidth: "100px",
-              whiteSpace: "nowrap",
-              color: "#333",
-              margin: "15px",
-              fontSize: "12px",
-            }}
-          >
-            {segments.map(({ color, from, to }, idx) => (
-              <div key={idx} style={{ display: "flex", alignItems: "center", marginBottom: "4px" }}>
-                <i
-                  style={{
-                    background: color,
-                    width: 18,
-                    height: 18,
-                    marginRight: 8,
-                    opacity: 0.7,
-                    display: "inline-block",
-                  }}
-                />
-                {formatRange(from, to)}
-              </div>
-            ))}
+        {segments.map(({ color, from, to }, idx) => (
+          <div key={idx} style={{ display: "flex", alignItems: "center", marginBottom: "4px" }}>
+            <i
+              style={{
+                background: color,
+                width: 18,
+                height: 18,
+                marginRight: 8,
+                opacity: 0.7,
+                display: "inline-block",
+              }}
+            />
+            {formatRange(from, to)}
           </div>
-        </div>
-      )}
+        ))}
       </div>
     </div>
   );
@@ -355,6 +355,17 @@ function LabelDot({ color, text }) {
     <div className="flex items-center gap-2">
       <div className={`w-2 h-2 rounded-full ${cls}`} />
       <label className="text-xs font-medium text-gray-200 uppercase tracking-wide">{text}</label>
+    </div>
+  );
+}
+
+function Warn({ text }) {
+  return (
+    <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 mt-1">
+      <p className="text-xs text-amber-300 flex items-center gap-1">
+        <FiAlertCircle className="w-3 h-3" />
+        {text}
+      </p>
     </div>
   );
 }
@@ -389,92 +400,116 @@ const StyledSelect = ({ label, options, value, onChange, error }) => {
 export default function Map() {
   const [geoData, setGeoData] = useState(null);
   const [info, setInfo] = useState(null);
-  const [maxValue, setMaxValue] = useState(0); // Add state for maxValue
+  const [maxValue, setMaxValue] = useState(0);
+  const [minValue, setMinValue] = useState(0);
 
-//   const [isLoading, setIsLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-    const [confirmedSelections, setConfirmedSelections] = useState(false);
+  const [confirmedSelections, setConfirmedSelections] = useState(false);
 
-  const [isLayerLoaded, setIsLayerLoaded] = useState(false);
   const [selectedPrevalence, setSelectedPrevalence] = useState(typeOfPrevalence[0]);
   const [selectedYear, setSelectedYear] = useState(prevalenceYears[0]);
   const [selectedVariable, setSelectedVariable] = useState(""); // Fixed variable name based on selection
+  const [predictiveError, setPredictiveError] = useState(null);
+  const [selectedOthers, setSelectedOthers] = useState("");
+  const predictiveOption = prevalenceYears[prevalenceYears.length - 1];
+  const labelPreference = useMemo(
+    () => (selectedYear === predictiveOption ? "state" : COLUMN_NAME),
+    [selectedYear, predictiveOption]
+  );
 
   // Construct the file path based on selections
   const getGeoJsonPath = () => {
     return `/geojsons/${selectedPrevalence}-${selectedYear}.geojson`;
   };
 
-//   useEffect(() => {
-//     // The file must live in Next.js /public as: /public/moran_local_output.geojson
-//     fetch(getGeoJsonPath())
-//       .then((res) => res.json())
-//       .then((data) => {
-//         setGeoData(data);
-//         // We'll wait for the layer to signal it's loaded before hiding the spinner
-//     //     // Compute max value from features
-//     //   const values = data.features.map(
-//     //     f => Number(f.properties?.['Avg PM2.5']) || 0
-//     //   );
-//     //   const computedMax = Math.max(...values);
-//     //   setMaxValue(computedMax);
-//     //   console.log('Values:', values);
-//     //   console.log('Computed max value:', Math.max(...values));
-//     //   console.log('Max lifetime prevalence:', maxValue);
-//     // Use it directly
-//         const computedMax = getMaxValue(data);
-//         setMaxValue(computedMax);
-//         console.log('Max lifetime prevalence:', computedMax);
+  // Handle confirmation
+  const handleConfirm = async () => {
+    setIsLoading(true);
+    setInfo(null);
+    setConfirmedSelections(false);
 
-//       })
-//       .catch((err) => {
-//         console.error('Failed to load GeoJSON:', err);
-//         // setIsLoading(false);
-//       });
-//   }, []);
+    try {
+      if (selectedYear === predictiveOption) {
+        const validationMessage = validateForecastYear(selectedOthers);
+        if (validationMessage) {
+          setPredictiveError(validationMessage);
+          setIsLoading(false);
+          return;
+        }
 
-// Handle confirmation
-const handleConfirm = () => {
-  setIsLoading(true);
-  setConfirmedSelections(true);
-  setInfo(null); // Reset info on new load
-  
-  console.log('Fetching GeoJSON from:', getGeoJsonPath());
-  fetch(getGeoJsonPath())
-    .then((res) => {
-      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-      return res.json();
-    })
-    .then((data) => {
-      console.log('GeoJSON loaded successfully:', data);
-      
-      const selectedVariable = selectedPrevalence === 'lifetime' 
-        ? 'LIFETIME PREVALENCE' 
-        : 'CURRENT PREVALENCE';
-      
-      setSelectedVariable(selectedVariable);
-      setGeoData(data);
-      const computedMax = getMaxValue(data, selectedVariable);
-      setMaxValue(computedMax);
+        const targetYear = Number.parseInt(selectedOthers.trim(), 10);
+
+        setPredictiveError(null);
+
+        const body = new URLSearchParams();
+        body.append("start", String(targetYear));
+        body.append("end", String(targetYear));
+
+        const geoResponse = await fetch(`${API_BASE}/get_forecasted_asthma/${targetYear}`);
+        if (!geoResponse) {
+          const forecastResponse = await fetch(`${API_BASE}/forecast`, {
+              method: "POST",
+              body
+          });
+
+          if (!forecastResponse.ok) {
+            throw new Error("Unable to generate forecast. Please try again.");
+          }
+
+          // const geoResponse = await fetch(`${API_BASE}/get_forecasted_asthma/${targetYear}`);
+
+          // if (!geoResponse.ok) {
+          //   throw new Error(`No forecast data found for ${targetYear}.`);
+          // }
+        }
+        
+        const geoJson = await geoResponse.json();
+        const variableName = "Predicted Asthma Prevalence %";
+        setSelectedVariable(variableName);
+        setGeoData(geoJson);
+        const { min, max } = getDataExtents(geoJson, variableName);
+        setMinValue(min);
+        setMaxValue(max);
+      } else {
+        setPredictiveError(null);
+        const response = await fetch(getGeoJsonPath());
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const variableName = selectedPrevalence === "lifetime"
+          ? "LIFETIME PREVALENCE"
+          : "CURRENT PREVALENCE";
+
+        setSelectedVariable(variableName);
+        setGeoData(data);
+        const { min, max } = getDataExtents(data, variableName);
+        setMinValue(min);
+        setMaxValue(max);
+      }
+
+      setConfirmedSelections(true);
+    } catch (err) {
+      console.error("Failed to load GeoJSON:", err);
+      if (selectedYear === predictiveOption) {
+        setPredictiveError(err instanceof Error ? err.message : "Unable to load forecast data.");
+      }
+    } finally {
       setIsLoading(false);
-    })
-    .catch((err) => {
-      console.error('Failed to load GeoJSON:', err);
-      setIsLoading(false);
-    });
-};
-  
-const handleConfirmWithDelay = async () => {
-  setIsLoading(true);
-  
-  // Fixed delay of 1.5 seconds
-  await new Promise(resolve => setTimeout(resolve, 1500));
-  
-  // Call handleConfirm without await since it manages its own loading state
-  handleConfirm();
-};
+    }
+  };
 
-const [selectedOthers, setSelectedOthers] = useState("");
+  const handleConfirmWithDelay = async () => {
+    setIsLoading(true);
+
+    // Fixed delay of 1.5 seconds
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    // Call handleConfirm without await since it manages its own loading state
+    await handleConfirm();
+  };
 
   const clickRick = (link) => {
     window.open(link, "_blank", "noopener,noreferrer");
@@ -521,14 +556,19 @@ const [selectedOthers, setSelectedOthers] = useState("");
                   options={prevalenceYears}
                   value={selectedYear}
                   onChange={(e) => {
-                    setSelectedYear(e.target.value);
+                    const value = e.target.value;
+                    setSelectedYear(value);
                     setInfo(null); // Reset info when changing selection
+                    if (value !== predictiveOption) {
+                      setPredictiveError(null);
+                      setSelectedOthers("");
+                    }
                   }}
                 />
               </div>
 
             {/* Show additional options if "Others (Predictive)" is selected */}
-              {selectedYear === prevalenceYears[prevalenceYears.length - 1] && (
+              {selectedYear === predictiveOption && (
                 <div className="space-y-3">
                   <LabelDot color="rose-400" text={
                                                     <span className="inline-flex items-center whitespace-nowrap">
@@ -541,10 +581,16 @@ const [selectedOthers, setSelectedOthers] = useState("");
                     <input
                       type="text"
                       value={selectedOthers}
-                      onChange={(e) => setSelectedOthers(e.target.value)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setSelectedOthers(value);
+                        const nextError = validateForecastYear(value);
+                        setPredictiveError(value.trim().length === 0 ? null : nextError);
+                      }}
                       placeholder="Enter year (e.g. 2026)"
                       className="w-full p-2 border border-white/10 rounded-lg bg-transparent focus:outline-none"
                     />
+                    {predictiveError && <Warn text={predictiveError} />}
                   {/* <StyledSelect
                     label="Select Other Years"
                     options={["2023-2024", "2025-2026", "2027-2028", "2029-2030"]}
@@ -591,7 +637,7 @@ const [selectedOthers, setSelectedOthers] = useState("");
         ) : (
         // Your map component here
         <MapContainer
-        key={`${selectedPrevalence}-${selectedYear}`} // 🚨 ADD THIS - forces remount
+        key={`${selectedPrevalence}-${selectedYear}-${selectedYear === predictiveOption ? selectedOthers : ""}`} 
         center={defaultCenter}
         zoom={defaultZoom}
         scrollWheelZoom
@@ -601,9 +647,15 @@ const [selectedOthers, setSelectedOthers] = useState("");
             attribution='&copy; OpenStreetMap &copy; CARTO'
             url='https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
         />
-        <ChoroplethLayer data={geoData} setInfo={setInfo} selectedVariable={selectedVariable} maxValue={maxValue}/>
-        <InfoControl info={info} selectedVariable={selectedVariable} />
-        <Legend maxValue={maxValue} />
+        <ChoroplethLayer
+          data={geoData}
+          setInfo={setInfo}
+          selectedVariable={selectedVariable}
+          minValue={minValue}
+          maxValue={maxValue}
+        />
+        <InfoControl info={info} selectedVariable={selectedVariable} columnPreference={labelPreference} />
+        <Legend minValue={minValue} maxValue={maxValue} />
         <Marker position={[37.1841, -119.4696]}>
             <Popup>California</Popup>
         </Marker>

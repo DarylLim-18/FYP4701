@@ -15,15 +15,6 @@ export default function Home() {
         <div className="p-3"></div>
         <div className="bg-gray-800 rounded-lg shadow-xl p-6"><MapWrapper /></div>
 
-        <div className="p-3"></div>
-        <div className="bg-gray-800 rounded-lg shadow-xl p-6 text-white">
-            <p>卐 This is a predictive analysis using Machine Learning.
-                Do take note that the accuracy of the prediction is not 100% and should be used as a reference only.
-                卐
-            </p>
-            <p></p>
-            
-        </div>
         {/* Insert any content below */}
 
         </main>
