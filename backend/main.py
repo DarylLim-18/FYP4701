@@ -294,7 +294,7 @@ def run_lisa_forecast(
     # analysis options
     wtype: str = "queen",
     k: int | None = None,
-    perm: int = 499,
+    perm: int = 999,
     alpha: float =0.05,
     simplify_tol: float | None = 0.01,
 ):
@@ -505,6 +505,7 @@ async def forecast(start: int = Form(2025, description="Starting year to begin f
         result = run_forecast(start_year= start, end_year=end)
         for i, obj in enumerate(result["per_year_frames"]):
             run_lisa_forecast(df=obj, name=result["years"][i])
+        
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
         

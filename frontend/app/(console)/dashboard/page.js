@@ -8,14 +8,13 @@ export default function Home() {
         <main>
         <div className="bg-gray-800 rounded-lg shadow-xl p-6 text-white">
             <h1 className="text-2xl font-bold">Dashboard</h1>
-            <p>Welcome to your application!</p>
-            <p></p>
+            {/* <p>Welcome to your application!</p> */}
+            <p>Explore asthma prevalence over time with this interactive spatial analysis platform. </p>
             
         </div>
         <div className="p-3"></div>
         <div className="bg-gray-800 rounded-lg shadow-xl p-6"><MapWrapper /></div>
 
-        <div className="p-3"></div>
         {/* Insert any content below */}
 
         </main>
