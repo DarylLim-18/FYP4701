@@ -1,5 +1,7 @@
 import numpy as np
 import pandas as pd
+import io
+import base64
 from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import GaussianNB
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
@@ -86,26 +88,42 @@ def run_naive_bayes(data, feature_cols, target_col='CURRENT PREVALENCE', bins=3)
     print("\nClassification Report:\n", report_str)
 
         # Plot predicted vs actual classes
-    plt.figure(figsize=(8, 6), num='Naive Bayes Classification')
-    plt.scatter(range(len(y_test)), y_test, alpha=0.6, label="Actual", marker='o')
-    plt.scatter(range(len(y_pred)), y_pred, alpha=0.6, label="Predicted", marker='x')
-    plt.xlabel("Test Sample Index")
-    plt.ylabel("Class")
-    plt.title("Actual vs Predicted Asthma Prevalence Classes")
-    plt.legend()
-    plt.grid(True)
-    plt.tight_layout()
-    plt.show()
+# Map class labels to integer codes for plotting
+    label_to_code = {label: i for i, label in enumerate(class_labels)}
+    y_test_codes = pd.Series(y_test).map(label_to_code).reset_index(drop=True)
+    y_pred_codes = pd.Series(y_pred).map(label_to_code).reset_index(drop=True)
 
+    fig, ax = plt.subplots(figsize=(9, 5))
+    ax.scatter(range(len(y_test_codes)), y_test_codes, alpha=0.6, label="Actual", marker='o')
+    ax.scatter(range(len(y_pred_codes)), y_pred_codes, alpha=0.6, label="Predicted", marker='x')
+    ax.set_xlabel("Test Sample Index")
+    ax.set_ylabel("Class (numeric code)")
+    ax.set_title("Naive Bayes: Actual vs Predicted Asthma Prevalence Classes")
 
+    # Replace y-ticks with class labels
+    ax.set_yticks(list(label_to_code.values()))
+    ax.set_yticklabels(list(label_to_code.keys()))
+    ax.legend()
+    ax.grid(True)
+    fig.tight_layout()
+
+    # Export figure to base64 PNG
+    buf = io.BytesIO()
+    plt.savefig(buf, format="png", bbox_inches="tight")
+    plt.close(fig)
+    buf.seek(0)
+    image_base64 = base64.b64encode(buf.read()).decode("utf-8")
+
+    # ---- Return full payload (JSON-serializable) ----
     return {
         "Model": "Naive Bayes",
         "Features Used": feature_cols,
-        "Accuracy": acc,
+        "Accuracy": float(acc),
         "Confusion Matrix": cm,
         "Classification Report": report_str,
         "Classification Report (Dict)": report_dict,
-        "Class Labels": class_labels
+        "Class Labels": class_labels,
+        "PlotImage": image_base64
     }
     
 def main():

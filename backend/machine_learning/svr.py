@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import io
+import base64
 
 from sklearn.model_selection import train_test_split, KFold, RandomizedSearchCV
 from sklearn.pipeline import make_pipeline
@@ -80,7 +82,12 @@ def run_svr_model(data: pd.DataFrame, feature_cols: list, target_col: str):
     axs[1, 0].axis('off'); axs[1, 1].axis('off')
 
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    plt.show()
+
+    buf = io.BytesIO()
+    plt.savefig(buf, format="png", bbox_inches='tight')
+    plt.close(fig)
+    buf.seek(0)
+    image_base64 = base64.b64encode(buf.read()).decode("utf-8")
 
     return {
         "Model": "Support Vector Regression",
@@ -89,4 +96,5 @@ def run_svr_model(data: pd.DataFrame, feature_cols: list, target_col: str):
         "R² score": r2,
         "CV_best_params": search.best_params_,
         "CV_best_RMSE": -float(search.best_score_),
+        "PlotImage": image_base64,
     }

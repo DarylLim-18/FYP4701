@@ -856,7 +856,8 @@ def run_svr_endpoint(target_variable: str = Query(..., description="Target varia
 @app.get("/machine-learning/extra-trees-regressor")
 def run_extra_trees_regressor_endpoint(target_variable: str = Query(..., description="Target variable for regression"),
     feature_variables: list = Query(..., description="List of feature variables"),
-    file_id: int = Query(..., description="ID of the uploaded CSV file")
+    file_id: int = Query(..., description="ID of the uploaded CSV file"),
+    n_estimators: int = Query(200, description="Number of trees in the Extra Trees Regressor (default=200)")
 ):
     try:
         print(f"Running Extra Trees Regressor with target: {target_variable}, features: {feature_variables}, file_id: {file_id}")
@@ -864,7 +865,8 @@ def run_extra_trees_regressor_endpoint(target_variable: str = Query(..., descrip
         res = run_extra_trees_regressor(
             data=data,
             feature_cols=feature_variables,
-            target_col=target_variable
+            target_col=target_variable,
+            n_estimators=n_estimators
         )   
         return res
 

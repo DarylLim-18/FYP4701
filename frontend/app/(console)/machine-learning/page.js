@@ -104,11 +104,22 @@ const ModelResultsCard = ({ results, algorithmName }) => {
           )}
 
           {results['Classification Report'] && (
-            <div>
+            <div className="mb-6">
               <h3 className="font-semibold text-slate-300 text-lg mb-3">Classification Report</h3>
               <pre className="bg-slate-900/70 p-4 rounded-lg text-xs text-slate-300 overflow-x-auto whitespace-pre-wrap font-mono">
                 {results['Classification Report']}
               </pre>
+            </div>
+          )}
+
+          {results['PlotImage'] && (
+            <div>
+              <h3 className="font-semibold text-slate-300 text-lg mb-3">Visualization</h3>
+              <img
+                src={`data:image/png;base64,${results['PlotImage']}`}
+                alt={`${algorithmName} Visualization`}
+                className="rounded-lg shadow-lg border border-slate-700 max-w-full h-auto"
+              />
             </div>
           )}
         </div>

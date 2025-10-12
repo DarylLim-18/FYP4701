@@ -2,8 +2,10 @@ import pandas as pd
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
+import io
+import base64
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import KFold, train_test_split, cross_val_score
 from sklearn.metrics import mean_squared_error, r2_score
 
 def load_data():
@@ -68,12 +70,19 @@ def run_rf_model(data, feature_cols, target_col='CURRENT_PREVALENCE'):
     data.dropna(subset=feature_cols + [target_col])
     X = data[feature_cols]
     y = data[target_col]
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    rf = RandomForestRegressor(random_state=42)
+    cv = KFold(n_splits=5, shuffle=True, random_state=42)
+    cv_scores = cross_val_score(rf, X, y, cv=cv, scoring="r2")
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42) #play around with the test size
     model = RandomForestRegressor(random_state=42)
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
     mse = mean_squared_error(y_test, y_pred)
     r2 = r2_score(y_test, y_pred)
+    print("\n--- Cross-Validation Results ---")
+    print("CV R² scores:", cv_scores)
+    print("Mean CV R²:", cv_scores.mean())
+    print("Std Dev:", cv_scores.std())
     print("\n--- Model Evaluation ---")
     print(f"Mean Squared Error: {mse:.2f}")
     print(f"R^2 Score: {r2:.2f}")
@@ -109,22 +118,28 @@ def run_rf_model(data, feature_cols, target_col='CURRENT_PREVALENCE'):
 
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     axs[1, 1].axis('off')
-    plt.show()
 
     # Show worst residuals
     residual_df = pd.DataFrame({
-        'Actual': y_test,
-        'Predicted': y_pred,
-        'Residual': residuals
+        'Actual': np.round(y_test, 2),
+        'Predicted': np.round(y_pred, 2),
+        'Residual': np.round(residuals, 2)
     })
     print("\n--- Worst Residuals (Top 5) ---")
     print(residual_df.reindex(residuals.abs().sort_values(ascending=False).index).head())
+
+    buf = io.BytesIO()
+    plt.savefig(buf, format="png", bbox_inches='tight')
+    plt.close(fig)
+    buf.seek(0)
+    image_base64 = base64.b64encode(buf.read()).decode("utf-8")
     
     res = {
         "Features Used": feature_cols,
         "Mean Squared Error": mse,
         "R² score": r2,
-        "Worst Residuals": residual_df.reindex(residuals.abs().sort_values(ascending=False).index).head() 
+        "Worst Residuals": residual_df.reindex(residuals.abs().sort_values(ascending=False).index).head(),
+        "PlotImage": image_base64
     }
 
     return res
