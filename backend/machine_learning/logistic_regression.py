@@ -1,8 +1,11 @@
 import pandas as pd
+import io
+import base64
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import GridSearchCV, train_test_split
 
 
 def load_data():
@@ -96,13 +99,27 @@ def run_logistic_regression(data, feature_cols, target_col='CURRENT PREVALENCE',
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
 
-    from sklearn.model_selection import train_test_split
     X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
 
-    model = LogisticRegression()
+    param_grid = {
+        "C": [0.01, 0.1, 1, 10, 100],           
+        "penalty": ["l1", "l2"],                
+        "solver": ["liblinear", "saga"]         
+    }
+
+    #Essentially helps with finding the optimal parameter values from the set of parameters.
+    grid = GridSearchCV(LogisticRegression(max_iter=5000), param_grid, cv=5, scoring="accuracy", n_jobs=-1, verbose=1)
+    grid.fit(X_train, y_train)
+
+    print("\n--- Best Hyperparameters ---")
+    print(grid.best_params_)
+    print("Best Mean CV Accuracy:", grid.best_score_)
+
+    model = grid.best_estimator_
     model.fit(X_train, y_train)
 
     y_pred = model.predict(X_test)
+    y_proba = model.predict_proba(X_test)[:, 1]
 
     acc = accuracy_score(y_test, y_pred)
     cm = confusion_matrix(y_test, y_pred)
@@ -154,17 +171,21 @@ def run_logistic_regression(data, feature_cols, target_col='CURRENT PREVALENCE',
     # --- Leave last subplot blank (or use for notes/legend) ---
     axs[1, 1].axis('off')
 
-    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    plt.show()
-
+    # Convert plot to base64 string
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png')
+    plt.close(fig)
+    buf.seek(0)
+    image_base64 = base64.b64encode(buf.read()).decode('utf-8')
 
     return {
         "Features Used": feature_cols,
         "Threshold": threshold,
         "Accuracy": acc,
         "Classification Report": report,
-        "Coefficients": model.coef_.tolist(),
-        "Intercept": model.intercept_.tolist(),
+        "Coefficients": [[round(float(c), 2) for c in coef_row] for coef_row in model.coef_],
+        "Intercept": [round(float(i), 2) for i in model.intercept_],
+        "PlotImage": image_base64,
     }
 
 def main():
