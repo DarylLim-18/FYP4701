@@ -256,7 +256,7 @@ def upsert_cache(cache_id: int, cache_name: str, geojson_obj: dict):
     finally:
         conn.close()
 
-def upload_asthmageo_data(year: str, geojson_obj: dict):
+def upload_asthmageo_data(year: int, geojson_obj: dict):
     conn = psycopg2.connect(
         dbname=os.getenv("PG_DB", "postgres"),
         user=os.getenv("PG_USER", "postgres"),
@@ -284,7 +284,7 @@ def upload_asthmageo_data(year: str, geojson_obj: dict):
         
 def run_lisa_forecast(
     df: DataFrame,
-    name: str,
+    year: int,
     level: str= "adm1",
     variable: str ="Predicted Asthma Prevalence %",
     # join options
@@ -342,7 +342,7 @@ def run_lisa_forecast(
     geojson = result[cols].to_json()
     geojson_obj = json.loads(geojson)
     
-    upload_asthmageo_data(name, geojson_obj)
+    upload_asthmageo_data(year=year, geojson_obj=geojson_obj)
     return 1
 
 
@@ -368,6 +368,29 @@ def get_db_connection():
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
+
+@app.post("/fill_database")
+async def fill_database():
+    conn = get_db_connection()
+    try:
+        file_path = "ml_dataset_smoking_Year-"
+        for year in range(2011, 2022):
+            df = pd.read_csv(f"data/out_years/{file_path}{year}.csv")
+            with conn, conn.cursor() as cur:
+                cur.execute("""
+                            SELECT asthmageo_id FROM asthma_geodata WHERE asthmageo_id=%s
+                            """, (year,))
+                row = cur.fetchone()
+                if not row:
+                    run_lisa_forecast(df=df, year=year, variable="Asthma Prevalence%")
+                else:
+                    continue
+        
+    except Exception as e:
+        return HTTPException(status_code=500, detail=str(e))
+    finally:
+        conn.close()
+        
 
     
 @app.post("/lisa/{file_id}")
@@ -504,7 +527,7 @@ async def forecast(start: int = Form(2025, description="Starting year to begin f
     try:
         result = run_forecast(start_year= start, end_year=end)
         for i, obj in enumerate(result["per_year_frames"]):
-            run_lisa_forecast(df=obj, name=result["years"][i])
+            run_lisa_forecast(df=obj, year=result["years"][i])
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
