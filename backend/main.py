@@ -27,7 +27,6 @@ from backend.machine_learning.gradient_boosting import run_gradient_boosting
 from backend.machine_learning.svr import run_svr_model
 from backend.machine_learning.extra_trees import run_extra_trees_regressor
 from backend.machine_learning.elastic_net import run_elastic_net_regression
-from backend.machine_learning.kNN import run_knn_classifier
 
 # Import forecasting functions
 from backend.training.forecasting import run_forecast
