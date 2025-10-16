@@ -9,7 +9,7 @@ import {
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { FiPlay, FiBarChart2, FiAlertCircle } from "react-icons/fi";
 import { FaStarOfDavid } from "react-icons/fa6";
 import { BsStars, BsClockHistory, BsGraphUpArrow } from "react-icons/bs";
@@ -42,6 +42,8 @@ const DEFAULT_COLOR = "#FFEDA0";
 const numberFormatter = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 2,
 });
+
+const FORECAST_YEAR_MIN = 2025;
 
 function colorFromScale(value, start, end, colors) {
   const range = end - start;
@@ -184,8 +186,8 @@ function validateForecastYear(rawValue) {
     return "Enter a numeric year without extra characters.";
   }
 
-  if (year < 2025) {
-    return "Forecasts start at 2025. Choose 2025 or later.";
+  if (year < FORECAST_YEAR_MIN) {
+    return `Forecasts start at ${FORECAST_YEAR_MIN}. Choose ${FORECAST_YEAR_MIN} or later.`;
   }
 
   return null;
@@ -197,14 +199,7 @@ const COLUMN_NAME = "county";
 // Extract all types of prevalence (current & lifetime)
 const typeOfPrevalence = ["current", "lifetime"];
 
-// Get all prevalence years
-const prevalenceYears = [
-  "2015-2016",
-  "2017-2018",
-  "2019-2020",
-  "2021-2022",
-  "Others (Predictive)",
-];
+const PREDICTIVE_OPTION_LABEL = "Others (Predictive)";
 
 // Get min/max for a selected variable
 const getDataExtents = (data, variableName) => {
@@ -233,6 +228,34 @@ const getDataExtents = (data, variableName) => {
 
 const defaultCenter = [37.1841, -119.4696];
 const defaultZoom = 6;
+
+function resolveVariableName(featureCollection, prevalenceSelection) {
+  const features = featureCollection?.features ?? [];
+  const preferredCandidates =
+    prevalenceSelection === "lifetime"
+      ? ["LIFETIME PREVALENCE", "Lifetime Prevalence"]
+      : ["CURRENT PREVALENCE", "Current Prevalence"];
+  const candidates = [
+    "Predicted Asthma Prevalence %",
+    ...preferredCandidates,
+  ].filter(Boolean);
+
+  for (const candidate of candidates) {
+    if (
+      candidate &&
+      features.some((feature) =>
+        Object.prototype.hasOwnProperty.call(
+          feature?.properties ?? {},
+          candidate
+        )
+      )
+    ) {
+      return candidate;
+    }
+  }
+
+  return candidates[0] ?? "Predicted Asthma Prevalence %";
+}
 
 function ChoroplethLayer({
   data,
@@ -468,21 +491,98 @@ export default function Map() {
   const [selectedPrevalence, setSelectedPrevalence] = useState(
     typeOfPrevalence[0]
   );
-  const [selectedYear, setSelectedYear] = useState(prevalenceYears[0]);
+  const [prevalenceYearOptions, setPrevalenceYearOptions] = useState([]);
+  const yearOptions = useMemo(
+    () => [...prevalenceYearOptions, PREDICTIVE_OPTION_LABEL],
+    [prevalenceYearOptions]
+  );
+  const [selectedYear, setSelectedYear] = useState(PREDICTIVE_OPTION_LABEL);
+  const manualYearSelectionRef = useRef(false);
   const [selectedVariable, setSelectedVariable] = useState(""); // Fixed variable name based on selection
   const [predictiveError, setPredictiveError] = useState(null);
   const [selectedOthers, setSelectedOthers] = useState("");
-  const predictiveOption = prevalenceYears[prevalenceYears.length - 1];
+  const predictiveOption = PREDICTIVE_OPTION_LABEL;
   const labelPreference = useMemo(
     () => (selectedYear === predictiveOption ? "state" : COLUMN_NAME),
     [selectedYear, predictiveOption]
   );
 
-  // Construct the file path based on selections
-  const getGeoJsonPath = () => {
-    return `/geojsons/${selectedPrevalence}-${selectedYear}.geojson`;
-  };
+  useEffect(() => {
+    let cancelled = false;
 
+    const loadYears = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/list_asthma`);
+        if (!response.ok) {
+          throw new Error(`Failed to load asthma years: ${response.status}`);
+        }
+
+        const payload = await response.json();
+        if (cancelled) return;
+
+        const extractedYears = Array.from(
+          new Set(
+            (payload ?? []).map((entry) => {
+              const raw =
+                entry?.id ??
+                entry?.asthmageo_id ??
+                entry?.asthmageoId ??
+                entry;
+              const parsed = Number.parseInt(raw, 10);
+              return Number.isFinite(parsed) ? parsed : null;
+            })
+          )
+        )
+          .filter(
+            (year) =>
+              year != null &&
+              Number.isFinite(year) &&
+              year < FORECAST_YEAR_MIN
+          )
+          .sort((a, b) => a - b)
+          .map(String);
+
+        setPrevalenceYearOptions((prev) => {
+          const sameLength = prev.length === extractedYears.length;
+          const sameValues =
+            sameLength &&
+            prev.every((value, index) => value === extractedYears[index]);
+          return sameValues ? prev : extractedYears;
+        });
+      } catch (error) {
+        console.error("Failed to load available asthma years:", error);
+      }
+    };
+
+    loadYears();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (prevalenceYearOptions.length === 0) {
+      return;
+    }
+
+    setSelectedYear((current) => {
+      if (prevalenceYearOptions.includes(current)) {
+        return current;
+      }
+
+      if (current === PREDICTIVE_OPTION_LABEL) {
+        if (manualYearSelectionRef.current) {
+          return current;
+        }
+        manualYearSelectionRef.current = false;
+        return prevalenceYearOptions[0];
+      }
+
+      manualYearSelectionRef.current = false;
+      return prevalenceYearOptions[0];
+    });
+  }, [prevalenceYearOptions]);
   // Handle confirmation
   const handleConfirm = async () => {
     setIsLoading(true);
@@ -528,29 +628,36 @@ export default function Map() {
         }
 
         const geoJson = await geoResponse.json();
-        const variableName = "Predicted Asthma Prevalence %";
+        const variableName = resolveVariableName(geoJson, selectedPrevalence);
         setSelectedVariable(variableName);
         setGeoData(geoJson);
         const { min, max } = getDataExtents(geoJson, variableName);
         setMinValue(min);
         setMaxValue(max);
+
       } else {
         setPredictiveError(null);
-        const response = await fetch(getGeoJsonPath());
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+        const targetYear = Number.parseInt(String(selectedYear), 10);
+        if (!Number.isFinite(targetYear)) {
+          throw new Error("Select a valid year before confirming.");
         }
 
-        const data = await response.json();
-        const variableName =
-          selectedPrevalence === "lifetime"
-            ? "LIFETIME PREVALENCE"
-            : "CURRENT PREVALENCE";
+        const geoResponse = await fetch(
+          `${API_BASE}/get_forecasted_asthma/${targetYear}`
+        );
+
+        if (!geoResponse.ok) {
+          throw new Error(
+            `Unable to load data for ${targetYear}. Status: ${geoResponse.status}`
+          );
+        }
+
+        const geoJson = await geoResponse.json();
+        const variableName = "Asthma Prevalence%";
 
         setSelectedVariable(variableName);
-        setGeoData(data);
-        const { min, max } = getDataExtents(data, variableName);
+        setGeoData(geoJson);
+        const { min, max } = getDataExtents(geoJson, variableName);
         setMinValue(min);
         setMaxValue(max);
       }
@@ -639,10 +746,11 @@ export default function Map() {
             />
             <StyledSelect
               label="Year Range"
-              options={prevalenceYears}
+              options={yearOptions}
               value={selectedYear}
               onChange={(e) => {
                 const value = e.target.value;
+                manualYearSelectionRef.current = true;
                 setSelectedYear(value);
                 setInfo(null); // Reset info when changing selection
                 if (value !== predictiveOption) {

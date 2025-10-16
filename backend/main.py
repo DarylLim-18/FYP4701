@@ -27,7 +27,7 @@ from backend.machine_learning.gradient_boosting import run_gradient_boosting
 from backend.machine_learning.svr import run_svr_model
 from backend.machine_learning.extra_trees import run_extra_trees_regressor
 from backend.machine_learning.elastic_net import run_elastic_net_regression
-from backend.machine_learning.kNN import run_knn_classifier
+# from backend.machine_learning.kNN import run_knn_classifier
 
 # Import forecasting functions
 from backend.training.forecasting import run_forecast
@@ -919,26 +919,26 @@ def run_elastic_net_endpoint(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-@app.get("/machine-learning/knn")
-def run_knn_endpoint(
-    target_variable: str = Query(..., description="Target variable for classification"),
-    feature_variables: list = Query(..., description="List of feature variables"),
-    file_id: int = Query(..., description="ID of the uploaded CSV file"),
-    n_neighbors: int = Query(5, description="Number of neighbors (default=5)")
-):
-    try:
-        print(f"Running KNN with target: {target_variable}, features: {feature_variables}, file_id: {file_id}, k={n_neighbors}")
-        data = retrieve_csv_table(file_id)
-        res = run_knn_classifier(
-            data=data,
-            feature_cols=feature_variables,
-            target_col=target_variable,
-            n_neighbors=n_neighbors
-        )
-        return res
+# @app.get("/machine-learning/knn")
+# def run_knn_endpoint(
+#     target_variable: str = Query(..., description="Target variable for classification"),
+#     feature_variables: list = Query(..., description="List of feature variables"),
+#     file_id: int = Query(..., description="ID of the uploaded CSV file"),
+#     n_neighbors: int = Query(5, description="Number of neighbors (default=5)")
+# ):
+#     try:
+#         print(f"Running KNN with target: {target_variable}, features: {feature_variables}, file_id: {file_id}, k={n_neighbors}")
+#         data = retrieve_csv_table(file_id)
+#         res = run_knn_classifier(
+#             data=data,
+#             feature_cols=feature_variables,
+#             target_col=target_variable,
+#             n_neighbors=n_neighbors
+#         )
+#         return res
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
     
 @app.get("/machine-learning/asthma-arthimetic-mean")
 def get_gas_analysis_data():
