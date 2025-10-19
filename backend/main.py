@@ -187,7 +187,8 @@ def local_moran(
     wtype: str = "queen",
     k: int | None = None,
     perm: int = 999,
-    alpha: float = 0.05
+    alpha: float = 0.05,
+    gas: bool = False
 ):
     if gdf.crs is None:
         gdf = gdf.set_crs(4326)
@@ -199,7 +200,11 @@ def local_moran(
     y = pd.to_numeric(gdf[variable], errors="coerce")
     mask = y.notna()
     if mask.sum() < 5:
-        raise ValueError("Not enough valid numeric values (>=5 required)")
+        if not gas:
+            raise ValueError("Not enough valid numeric values (>=5 required)")
+        else:
+            print("Not enough valid numeric values (>=5 required), SKIPPING")
+            return False
     sub = gdf.loc[mask].copy()
     y_sub = y.loc[mask].to_numpy()
     
@@ -232,13 +237,7 @@ def local_moran(
     return out
 
 def upsert_cache(cache_id: int, cache_name: str, geojson_obj: dict):
-    conn = psycopg2.connect(
-        dbname="postgres",
-        user="postgres",
-        password="hanikodi4701!",   # move to env var
-        host="localhost",
-        port="5432"
-    )
+    conn = get_db_connection()
     try:
         with conn, conn.cursor() as cur:
             cur.execute(
@@ -256,13 +255,7 @@ def upsert_cache(cache_id: int, cache_name: str, geojson_obj: dict):
         conn.close()
 
 def upload_asthmageo_data(year: int, geojson_obj: dict):
-    conn = psycopg2.connect(
-        dbname=os.getenv("PG_DB", "postgres"),
-        user=os.getenv("PG_USER", "postgres"),
-        password=os.getenv("PG_PASSWORD", "hanikodi4701!"),  # move to env var
-        host=os.getenv("PG_HOST", "localhost"),
-        port=os.getenv("PG_PORT", "5432"),
-    )
+    conn = get_db_connection()
     try:
         with conn, conn.cursor() as cur:
             cur.execute(
@@ -280,6 +273,24 @@ def upload_asthmageo_data(year: int, geojson_obj: dict):
     finally:
         conn.close()
         
+def upload_gasgeo_data(year: int, var: str, geojson_obj: dict):
+    conn = get_db_connection()
+    try:
+        with conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO gas_geodata (gasgeo_year, gasgeo_name, gasgeo_data)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (gasgeo_id) DO NOTHING
+                RETURNING gasgeo_id;
+                """,
+                (year, var, Json(geojson_obj)),
+            )
+            inserted = cur.fetchone()  # None if DO NOTHING triggered
+            print(f"Saved: {var}-{year}")
+            return bool(inserted)  # True = saved, False = already existed
+    finally:
+        conn.close()
         
 def run_lisa_forecast(
     df: DataFrame,
@@ -296,6 +307,8 @@ def run_lisa_forecast(
     perm: int = 999,
     alpha: float =0.05,
     simplify_tol: float | None = 0.01,
+    asthma: bool = True,
+    gas: bool = False
 ):
     
 
@@ -325,11 +338,14 @@ def run_lisa_forecast(
     try:
         result = local_moran(
             merged, variable,
-            wtype=wtype, k=k, perm=perm, alpha=alpha
+            wtype=wtype, k=k, perm=perm, alpha=alpha,
+            gas=gas
         )
     except ValueError as ve:
         raise HTTPException(400, detail=str(ve))
 
+    if result is False:
+        return 0
     # optional simplify for web payload
     if simplify_tol:
         result["geometry"] = result.geometry.simplify(simplify_tol, preserve_topology=True)
@@ -341,10 +357,22 @@ def run_lisa_forecast(
     geojson = result[cols].to_json()
     geojson_obj = json.loads(geojson)
     
-    upload_asthmageo_data(year=year, geojson_obj=geojson_obj)
+    if asthma:
+        upload_asthmageo_data(year=year, geojson_obj=geojson_obj)
+    elif gas:
+        upload_gasgeo_data(year=year, var=variable, geojson_obj=geojson_obj)
+    
     return 1
 
+def get_gas_df(year: int):
+    df = pd.read_csv("backend/training/ml_dataset_smoking.csv")
 
+    years = pd.to_numeric(df["Year"], errors="coerce").astype("Int64")
+    mask = years == int(year)
+    out = df.loc[mask].copy()
+
+    out["Country"] = "United States of America"
+    return out
 
 load_dotenv()
 
@@ -381,7 +409,18 @@ async def fill_database():
                             """, (year,))
                 row = cur.fetchone()
                 if not row:
-                    run_lisa_forecast(df=df, year=year, variable="Asthma Prevalence%")
+                    run_lisa_forecast(df=df, year=year, variable="Asthma Prevalence%", asthma=True)
+                
+            with conn, conn.cursor() as cur:
+                gas_vars = ["Avg CO2", "Avg NO2", "Avg Ozone", "Avg PM10", "Avg PM2.5", "Avg SO2"]
+                for var in gas_vars:
+                    print(f"ATTEMPTING {year} - {var}")
+                    cur.execute("""
+                                SELECT gasgeo_year, gasgeo_name FROM gas_geodata WHERE gasgeo_year=%s AND gasgeo_name = %s
+                                """, (year, var))
+                    row = cur.fetchone()
+                    if not row:
+                        run_lisa_forecast(df=get_gas_df(year), year=year, variable=var, asthma=False, gas=True)
                 else:
                     continue
         
@@ -506,6 +545,9 @@ async def run_lisa(
     except ValueError as ve:
         raise HTTPException(400, detail=str(ve))
 
+    if result is False:
+        return 0
+    
     # optional simplify for web payload
     if simplify_tol:
         result["geometry"] = result.geometry.simplify(simplify_tol, preserve_topology=True)
@@ -538,13 +580,7 @@ async def upload_file(file: UploadFile = File(...)):
         # Read the contents of the uploaded file
         contents = await file.read()
         # Connect to PostgreSQL
-        conn = psycopg2.connect(
-            dbname="postgres",
-            user="postgres",
-            password="hanikodi4701!",
-            host="localhost",
-            port="5432"
-        )
+        conn = get_db_connection()
         cur = conn.cursor()
 
         # Insert file into database
@@ -566,13 +602,7 @@ async def upload_file(file: UploadFile = File(...)):
 
 @app.get("/cache")
 def get_cache():
-    conn = psycopg2.connect(
-        dbname="postgres", 
-        user="postgres", 
-        password="hanikodi4701!",
-        host="localhost",
-        port="5432"
-    )
+    conn = get_db_connection()
     try:
         with conn, conn.cursor() as cur:
             cur.execute(
@@ -591,15 +621,9 @@ def get_cache():
         conn.close()
 
 
-@app.get("/get_forecasted_asthma/{year}")
-async def get_forecasted_asthma(year: int = Path(..., description="Year of the data")):
-    conn = psycopg2.connect(
-        dbname="postgres", 
-        user="postgres", 
-        password="hanikodi4701!",
-        host="localhost",
-        port="5432"
-    )
+@app.get("/get_asthma_dashboard/{year}")
+async def get_asthma_dashboard(year: int = Path(..., description="Year of the data")):
+    conn = get_db_connection()
     try:
         with conn, conn.cursor() as cur:
             cur.execute(
@@ -615,7 +639,7 @@ async def get_forecasted_asthma(year: int = Path(..., description="Year of the d
     finally:
         conn.close()
         
-@app.get("/list_asthma")
+@app.get("/list_asthma_dashboard")
 async def list_asthma_geodata():
     try:
         conn = get_db_connection()
@@ -626,6 +650,38 @@ async def list_asthma_geodata():
         conn.close()
 
         return [{"id": f[0], "Geodata Name": f[1]} for f in files]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/get_gas_dashboard/{year}/{var}")
+async def get_gas_dashboard(year: int = Path(..., description="Year of the data"), var: str = Path(..., description="Gas var: [Avg CO2, Avg NO2, Avg Ozone, Avg PM10, Avg PM2.5, Avg SO2]")):
+    conn = get_db_connection()
+    try:
+        with conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT gasgeo_data FROM gas_geodata WHERE gasgeo_year=%s AND gasgeo_name=%s
+                """, 
+                (year,var))
+            row = cur.fetchone()
+            if not row:
+                raise HTTPException(status_code=404, detail="Data not found")
+            data = row
+            return Response(content=json.dumps(data), media_type="application/geo+json")
+    finally:
+        conn.close()
+        
+@app.get("/list_gas_dashboard")
+async def list_gas_geodata():
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT gasgeo_id, gasgeo_year, gasgeo_name FROM gas_geodata")
+        files = cur.fetchall()
+        cur.close()
+        conn.close()
+
+        return [{"id": f[0], "Year": f[1], "Var": f[2]} for f in files]
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
