@@ -105,11 +105,13 @@ export default function ModularMapPage() {
   useEffect(() => {
     (async () => {
       try {
+        setSavedUrl(null);
         const res = await fetch(`${BASE_URL}/cache`);
         if (!res.ok) return;
         const data = await res.json();
         if (!data) return;
         setGeojson(data);
+        setSavedUrl(`${BASE_URL}/cache`);
         const inferredVar = deriveVariableFromGeojson(data);
         if (inferredVar) {
           setForm((p) => ({ ...p, variable: inferredVar }));
