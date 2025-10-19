@@ -337,7 +337,7 @@ const Home = () => {
                         <AnimatedSection delay={800}>
                             <div className="hero-image-container">
                                 <img
-                                    src="dashboard_pic.png"
+                                    src="dashboard_pic2.png"
                                     alt="Document Management Interface"
                                     className="hero-image"
                                 />
@@ -402,7 +402,7 @@ const Home = () => {
                                         "Consists of all gasses",
                                         "Select between any year"
                                     ]}
-                                    image="upload.png"
+                                    image="set_parameters.png"
                                 />
 
                                 <FeatureCard
@@ -509,7 +509,7 @@ const Home = () => {
                                         "One-click open or remove controls.",
                                         "Responsive even for large tables."
                                     ]}
-                                    image="configure.png"
+                                    image="preview.png"
                                 />
 
                                 <FeatureCard
@@ -536,7 +536,7 @@ const Home = () => {
                                         "Workspace-only authenticated access.",
                                         "Tuned queries keep fetches quick."
                                     ]}
-                                    image="https://images.unsplash.com/photo-1600267165477-6d4cc741b379"
+                                    image="storage.png"
                                 />
                             </div>
                         </div>
@@ -594,7 +594,7 @@ const Home = () => {
                                         "Toggle feature columns on or off quickly.",
                                         "Confirm column availability in one glance."
                                     ]}
-                                    image="https://images.unsplash.com/photo-1517430816045-df4b7de11d1d?auto=format&fit=crop&w=1200&q=80"
+                                    image="select.png"
                                 />
 
                                 <FeatureCard
@@ -617,14 +617,13 @@ const Home = () => {
                                         <circle cx="12" cy="17" r="1.5" fill="currentColor" />
                                         <circle cx="17" cy="12" r="1.5" fill="currentColor" />
                                     </svg>}
-                                    title="2. Swap Models"
+                                    title="2. Switch between Models"
                                     description="Toggle across nine ready-made algorithms."
                                     features={[
                                         "Mix linear, tree and kNN options.",
-                                        "Preview model notes before you launch.",
                                         "Queue new runs without losing selections."
                                     ]}
-                                    image="https://images.unsplash.com/photo-1526378722484-bd91ca387e72?auto=format&fit=crop&w=1200&q=80"
+                                    image="model_select.png"
                                 />
 
                                 <FeatureCard
@@ -665,7 +664,7 @@ const Home = () => {
                                         "Plots and summaries inside the results.",
                                         "Surface worst residuals to handle outliers."
                                     ]}
-                                    image="https://images.unsplash.com/photo-1556157382-97eda2d62296?auto=format&fit=crop&w=1200&q=80"
+                                    image="results.png"
                                 />
                             </div>
                         </div>
@@ -723,7 +722,7 @@ const Home = () => {
                                         "Select the numeric feature for clustering.",
                                         "Check headers before launching analysis."
                                     ]}
-                                    image="https://images.unsplash.com/photo-1527430253228-e93688616381?auto=format&fit=crop&w=1200&q=80"
+                                    image="spatial_inputs.png"
                                 />
 
                                 <FeatureCard
@@ -748,7 +747,7 @@ const Home = () => {
                                         "Join keys or lat/long columns as needed.",
                                         "Choose rook/queen/kNN Spatial weights."
                                     ]}
-                                    image="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80"
+                                    image="adm012.png"
                                 />
 
                                 <FeatureCard
@@ -784,7 +783,7 @@ const Home = () => {
                                         "Hover any region for its stats.",
                                         "Download the GeoJSON if you need it."
                                     ]}
-                                    image="https://images.unsplash.com/photo-1528747045269-390fe33c19d4?auto=format&fit=crop&w=1200&q=80"
+                                    image="spatial_map.png"
                                 />
                             </div>
                         </div>
