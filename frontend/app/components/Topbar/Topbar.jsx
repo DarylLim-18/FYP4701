@@ -2,19 +2,26 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { FaLungs } from 'react-icons/fa'
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { FiHome, FiDatabase, FiSettings, FiBarChart, FiMap } from 'react-icons/fi';
 import { BsGraphUp } from 'react-icons/bs';
 
 export default function Topbar() {
+  const router = useRouter();
   const pathname = usePathname();
-  // window.localStorage.setItem('hasVisitedLanding', 'false');
+
+  const handleBrandClick = (event) => {
+    event.preventDefault();
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem('hasVisitedLanding');
+    }
+    router.push('/');
+  };
 
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: <FiHome className="w-4 h-4" /> },
     { href: '/data', label: 'Data', icon: <FiDatabase className="w-4 h-4" /> },
     { href: '/machine-learning', label: 'Machine Learning', icon: <BsGraphUp className="w-4 h-4" /> },
-    // { href: '/data-analysis', label: 'Data Analysis', icon: <FiBarChart className="w-4 h-4" /> },
     { href: '/modular-map', label: 'Spatial Analysis', icon: <FiMap className="w-4 h-4" /> },
   ];
 
@@ -22,7 +29,7 @@ export default function Topbar() {
     <header className="fixed top-0 left-0 right-0 z-20 border-b border-white/10 bg-gray-900/70 backdrop-blur-md">
       <div className="w-full h-14 pl-8 pr-4 flex items-center justify-between">
         {/* Brand */}
-        <Link href="/" className="flex items-center gap-2">
+        <a href="/" className="flex items-center gap-2" onClick={handleBrandClick}>
           <div className="bg-teal-600 text-white rounded-full">
             <FaLungs size={30} />
           </div>
@@ -32,7 +39,7 @@ export default function Topbar() {
           <span className="text-2xl font-bold text-white">
             AsthmaAssist
           </span>
-        </Link>
+        </a>
 
         {/* Nav */}
         <nav className="flex items-center gap-2 text-sm">

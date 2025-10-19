@@ -4,7 +4,6 @@ import { useRouter } from 'next/navigation'
 import { FaLungs } from 'react-icons/fa'
 import "./app.css"
 import { useEffect, useState, useMemo, useRef, useCallback } from "react";
-import { useLayoutEffect } from "react";
 
 
 const AnimatedSection = ({ children, className = "", delay = 0 }) => {
@@ -201,21 +200,20 @@ const Home = () => {
     }, [resumeCarousel]);
 
     useEffect(() => {
-        // Gate landing page so it only appears on the first visit per browser
         if (typeof window === 'undefined') {
             return;
         }
 
-        const hasVisited = window.localStorage.getItem('hasVisitedLanding');
+        const hasVisited = window.localStorage.getItem('hasVisitedLanding') === 'true';
 
         if (hasVisited) {
-            // router.replace('/dashboard');
-            setShowLanding(true);
-        } else {
-            window.localStorage.setItem('hasVisitedLanding', 'true');
-            setShowLanding(true);
+            router.replace('/dashboard');
+            setShowLanding(false);
+            setIsCheckingLaunch(false);
+            return;
         }
 
+        setShowLanding(true);
         setIsCheckingLaunch(false);
     }, [router]);
 
@@ -256,6 +254,9 @@ const Home = () => {
 
 
     const handleGetStarted = () => {
+        if (typeof window !== 'undefined') {
+            window.localStorage.setItem('hasVisitedLanding', 'true');
+        }
         router.push('/dashboard');
     };
 
@@ -414,7 +415,7 @@ const Home = () => {
                                         <circle cx="12" cy="12" r="1.2" fill="currentColor" />
                                     </svg>}
                                     title="2. Visualise Data Spatially"
-                                    description="Enable users to understand data on a map."
+                                    description="See regional patterns right on the map."
                                     features={[
                                         "Get specific info upon hover",
                                         "Flexible legend for data of any range",
@@ -902,5 +903,7 @@ const Home = () => {
 };
 
 export default Home
+
+
 
 
