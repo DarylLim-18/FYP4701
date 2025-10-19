@@ -1,6 +1,6 @@
 # FYP4701
 
-# Analyzing Cardiovascular Disease with Spatial Analysis and Machine Learning Platform
+# Analyzing Respiratory Disease with Spatial Analysis and Machine Learning Platform
 
 ## Table of Contents
 
@@ -14,7 +14,13 @@
 
 ## Project Overview
 
-Overview here
+AsthmaAssist is an interactive spatial analytics platform for respiratory health research. The landing experience highlights:
+
+- A configurable dashboard for comparing historic asthma prevalence against gas emissions, previewing choropleth legends, and running forecast scenarios.
+- A data workspace that accepts CSV/XLSX uploads, provides instant previews, and keeps datasets stored securely in PostgreSQL.
+- A no-code machine learning lab with nine prebuilt algorithms, guided feature/target selection, and inline performance reports.
+- A spatial analysis studio that aligns datasets with ADM0/ADM1/ADM2 boundaries, builds Local Moran hotspot maps, and exports GeoJSON results.
+- Productivity touches such as guided onboarding, explainable model outputs, collaboration-ready exports, and enterprise-grade access controls.
 
 ## Software Requirements
 
