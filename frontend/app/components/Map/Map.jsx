@@ -138,6 +138,57 @@ function buildLegendSegments(min, max) {
   return segments;
 }
 
+function normalizeFeatureCollection(input) {
+  if (!input) return null;
+
+  if (Array.isArray(input)) {
+    const collections = input
+      .map((entry) => normalizeFeatureCollection(entry))
+      .filter(
+        (collection) =>
+          collection &&
+          typeof collection === "object" &&
+          Array.isArray(collection.features)
+      );
+
+    if (collections.length === 0) {
+      return null;
+    }
+
+    if (collections.length === 1) {
+      return collections[0];
+    }
+
+    const [first] = collections;
+    const mergedFeatures = collections.reduce(
+      (acc, collection) => {
+        if (Array.isArray(collection.features)) {
+          acc.push(...collection.features);
+        }
+        return acc;
+      },
+      []
+    );
+    return {
+      ...first,
+      features: mergedFeatures,
+    };
+  }
+
+  if (
+    typeof input === "object" &&
+    input !== null &&
+    input.type === "FeatureCollection"
+  ) {
+    return {
+      ...input,
+      features: Array.isArray(input.features) ? input.features : [],
+    };
+  }
+
+  return null;
+}
+
 function labelFromProps(props, preferredKey) {
   if (!props) return "—";
   const candidates = [
@@ -196,10 +247,56 @@ function validateForecastYear(rawValue) {
 // const PATH = "geojsons/lisa-1.geojson"
 const COLUMN_NAME = "county";
 
-// Extract all types of prevalence (current & lifetime)
-const typeOfPrevalence = ["current", "lifetime"];
+const ASTHMA_DATASET_LABEL = "Asthma Prevalence";
+const ASTHMA_PROPERTY_CANDIDATES = [
+  "Predicted Asthma Prevalence %",
+  "Asthma Prevalence%",
+  "Asthma Prevalence %",
+  "Asthma Prevalence (%)",
+  "CURRENT PREVALENCE",
+  "Current Prevalence",
+  "LIFETIME PREVALENCE",
+  "Lifetime Prevalence",
+];
 
 const PREDICTIVE_OPTION_LABEL = "Others (Predictive)";
+
+function coerceToNumber(input) {
+  if (typeof input === "number") {
+    return Number.isFinite(input) ? input : NaN;
+  }
+
+  if (typeof input === "string") {
+    const sanitized = input.replace(/[^0-9.+\-eE]/g, "");
+    if (sanitized.length === 0) {
+      return NaN;
+    }
+    const parsed = Number.parseFloat(sanitized);
+    return Number.isFinite(parsed) ? parsed : NaN;
+  }
+
+  if (Array.isArray(input)) {
+    for (const candidate of input) {
+      const coerced = coerceToNumber(candidate);
+      if (Number.isFinite(coerced)) {
+        return coerced;
+      }
+    }
+    return NaN;
+  }
+
+  if (input && typeof input === "object") {
+    const candidate =
+      "value" in input
+        ? input.value
+        : "Value" in input
+        ? input.Value
+        : null;
+    return candidate != null ? coerceToNumber(candidate) : NaN;
+  }
+
+  return NaN;
+}
 
 // Get min/max for a selected variable
 const getDataExtents = (data, variableName) => {
@@ -208,12 +305,7 @@ const getDataExtents = (data, variableName) => {
 
   for (const feature of data?.features ?? []) {
     const raw = feature?.properties?.[variableName];
-    const value =
-      typeof raw === "number"
-        ? raw
-        : typeof raw === "string"
-        ? parseFloat(raw)
-        : NaN;
+    const value = coerceToNumber(raw);
     if (Number.isFinite(value)) {
       if (value < min) min = value;
       if (value > max) max = value;
@@ -229,32 +321,40 @@ const getDataExtents = (data, variableName) => {
 const defaultCenter = [37.1841, -119.4696];
 const defaultZoom = 6;
 
-function resolveVariableName(featureCollection, prevalenceSelection) {
+function resolveVariableName(featureCollection, datasetSelection) {
   const features = featureCollection?.features ?? [];
-  const preferredCandidates =
-    prevalenceSelection === "lifetime"
-      ? ["LIFETIME PREVALENCE", "Lifetime Prevalence"]
-      : ["CURRENT PREVALENCE", "Current Prevalence"];
-  const candidates = [
-    "Predicted Asthma Prevalence %",
-    ...preferredCandidates,
-  ].filter(Boolean);
-
-  for (const candidate of candidates) {
-    if (
-      candidate &&
-      features.some((feature) =>
-        Object.prototype.hasOwnProperty.call(
-          feature?.properties ?? {},
-          candidate
-        )
+  const propertiesFor = (candidate) =>
+    candidate &&
+    features.some((feature) =>
+      Object.prototype.hasOwnProperty.call(
+        feature?.properties ?? {},
+        candidate
       )
-    ) {
+    );
+
+  if (
+    datasetSelection != null &&
+    datasetSelection !== ASTHMA_DATASET_LABEL
+  ) {
+    const trimmed =
+      typeof datasetSelection === "string"
+        ? datasetSelection.trim()
+        : String(datasetSelection);
+
+    if (trimmed && propertiesFor(trimmed)) {
+      return trimmed;
+    }
+
+    return trimmed || ASTHMA_PROPERTY_CANDIDATES[0];
+  }
+
+  for (const candidate of ASTHMA_PROPERTY_CANDIDATES) {
+    if (propertiesFor(candidate)) {
       return candidate;
     }
   }
 
-  return candidates[0] ?? "Predicted Asthma Prevalence %";
+  return ASTHMA_PROPERTY_CANDIDATES[0];
 }
 
 function ChoroplethLayer({
@@ -268,7 +368,7 @@ function ChoroplethLayer({
 
   const styleFn = useCallback(
     (feature) => {
-      const v = Number(feature?.properties?.[selectedVariable]);
+      const v = coerceToNumber(feature?.properties?.[selectedVariable]);
       return {
         fillColor: colorFor(v, minValue, maxValue),
         weight: 1,
@@ -321,7 +421,7 @@ const InfoControl = ({ info, selectedVariable, columnPreference }) => {
     () => labelFromProps(info, columnPreference),
     [info, columnPreference]
   );
-  const value = Number(info?.[selectedVariable]);
+  const value = coerceToNumber(info?.[selectedVariable]);
   const formattedValue = Number.isFinite(value)
     ? `${Math.round(value * 100) / 100}%`
     : "—";
@@ -442,7 +542,14 @@ function Warn({ text }) {
   );
 }
 
-const StyledSelect = ({ label, options, value, onChange, error }) => {
+const StyledSelect = ({
+  label,
+  options,
+  value,
+  onChange,
+  error,
+  disabled = false,
+}) => {
   return (
     <div className="space-y-2">
       <label className="text-xs font-medium text-gray-300">{label}</label>
@@ -450,7 +557,13 @@ const StyledSelect = ({ label, options, value, onChange, error }) => {
         <select
           value={value}
           onChange={onChange}
-          className="w-full rounded-lg bg-slate-800/60 border border-white/20 px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500/30 transition-all appearance-none"
+          disabled={disabled}
+          className={[
+            "w-full rounded-lg px-3 py-2.5 text-sm transition-all appearance-none",
+            disabled
+              ? "bg-slate-800/40 border border-white/10 text-slate-500 cursor-not-allowed"
+              : "bg-slate-800/60 border border-white/20 text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500/30",
+          ].join(" ")}
         >
           {options.map((option) => (
             <option key={option} value={option}>
@@ -482,55 +595,163 @@ const StyledSelect = ({ label, options, value, onChange, error }) => {
 export default function Map() {
   const [geoData, setGeoData] = useState(null);
   const [info, setInfo] = useState(null);
-  const [maxValue, setMaxValue] = useState(0);
-  const [minValue, setMinValue] = useState(0);
 
   const [isLoading, setIsLoading] = useState(false);
   const [confirmedSelections, setConfirmedSelections] = useState(false);
 
+  const [datasetOptions, setDatasetOptions] = useState([
+    ASTHMA_DATASET_LABEL,
+  ]);
   const [selectedPrevalence, setSelectedPrevalence] = useState(
-    typeOfPrevalence[0]
+    ASTHMA_DATASET_LABEL
   );
   const [prevalenceYearOptions, setPrevalenceYearOptions] = useState([]);
   const yearOptions = useMemo(
     () => [...prevalenceYearOptions, PREDICTIVE_OPTION_LABEL],
     [prevalenceYearOptions]
   );
-  const [selectedYear, setSelectedYear] = useState(PREDICTIVE_OPTION_LABEL);
+  const [selectedYear, setSelectedYear] = useState("");
   const manualYearSelectionRef = useRef(false);
   const [selectedVariable, setSelectedVariable] = useState(""); // Fixed variable name based on selection
   const [predictiveError, setPredictiveError] = useState(null);
   const [selectedOthers, setSelectedOthers] = useState("");
   const predictiveOption = PREDICTIVE_OPTION_LABEL;
+  const isPredictiveSelection = selectedYear === predictiveOption;
   const labelPreference = useMemo(
     () => (selectedYear === predictiveOption ? "state" : COLUMN_NAME),
     [selectedYear, predictiveOption]
   );
+  const { min: minValue, max: maxValue } = useMemo(() => {
+    if (!geoData || !selectedVariable) {
+      return { min: 0, max: 0 };
+    }
+    return getDataExtents(geoData, selectedVariable);
+  }, [geoData, selectedVariable]);
 
   useEffect(() => {
     let cancelled = false;
 
     const loadYears = async () => {
       try {
-        const response = await fetch(`${API_BASE}/list_asthma`);
-        if (!response.ok) {
-          throw new Error(`Failed to load asthma years: ${response.status}`);
+        const [asthmaResponse, gasResponse] = await Promise.all([
+          fetch(`${API_BASE}/list_asthma_dashboard`),
+          fetch(`${API_BASE}/list_gas_dashboard`),
+        ]);
+
+        if (!asthmaResponse.ok) {
+          throw new Error(
+            `Failed to load asthma dashboard metadata: ${asthmaResponse.status}`
+          );
         }
 
-        const payload = await response.json();
+        if (!gasResponse.ok) {
+          throw new Error(
+            `Failed to load gas dashboard metadata: ${gasResponse.status}`
+          );
+        }
+
+        const [asthmaPayload, gasPayload] = await Promise.all([
+          asthmaResponse.json(),
+          gasResponse.json(),
+        ]);
+
         if (cancelled) return;
 
-        const extractedYears = Array.from(
+        const parseYear = (candidate) => {
+          if (candidate == null) return null;
+
+          if (typeof candidate === "number") {
+            const truncated = Math.trunc(candidate);
+            return Number.isFinite(truncated) ? truncated : null;
+          }
+
+          if (typeof candidate !== "string") {
+            const serialized = String(candidate);
+            if (serialized === "[object Object]") return null;
+            candidate = serialized;
+          }
+
+          const trimmed = candidate.trim();
+          if (trimmed.length === 0) return null;
+
+          const regexMatch = trimmed.match(/\b(1[0-9]{3}|20[0-9]{2})\b/);
+          if (regexMatch) {
+            const parsed = Number.parseInt(regexMatch[0], 10);
+            return Number.isFinite(parsed) ? parsed : null;
+          }
+
+          const parsed = Number.parseInt(trimmed, 10);
+          return Number.isFinite(parsed) ? parsed : null;
+        };
+
+        const collectYear = (entry) => {
+          if (entry == null) return null;
+
+          const candidates = [
+            entry?.Year,
+            entry?.year,
+            entry?.asthmageo_year,
+            entry?.asthmageoYear,
+            entry?.gasgeo_year,
+            entry?.gasgeoYear,
+            entry?.id,
+            entry?.asthmageo_id,
+            entry?.asthmageoId,
+            entry?.gasgeo_id,
+            entry?.gasgeoId,
+            entry?.name,
+            entry?.["Geodata Name"],
+            entry?.["Var"],
+            entry,
+          ];
+
+          for (const candidate of candidates) {
+            const parsed = parseYear(candidate);
+            if (Number.isFinite(parsed)) {
+              return parsed;
+            }
+          }
+
+          return null;
+        };
+
+        const gasVariablesSet = new Set();
+        for (const entry of Array.isArray(gasPayload) ? gasPayload : []) {
+          const rawVar =
+            entry?.Var ??
+            entry?.var ??
+            entry?.variable ??
+            entry?.Variable ??
+            null;
+          if (typeof rawVar === "string") {
+            const trimmed = rawVar.trim();
+            if (trimmed.length > 0) {
+              gasVariablesSet.add(trimmed);
+            }
+          }
+        }
+
+        const nextDatasetOptions = [
+          ...gasVariablesSet,
+          ASTHMA_DATASET_LABEL,
+        ];
+
+        setDatasetOptions((prev) => {
+          const sameLength = prev.length === nextDatasetOptions.length;
+          const sameValues =
+            sameLength &&
+            prev.every(
+              (value, index) => value === nextDatasetOptions[index]
+            );
+          return sameValues ? prev : nextDatasetOptions;
+        });
+
+        const combinedYears = Array.from(
           new Set(
-            (payload ?? []).map((entry) => {
-              const raw =
-                entry?.id ??
-                entry?.asthmageo_id ??
-                entry?.asthmageoId ??
-                entry;
-              const parsed = Number.parseInt(raw, 10);
-              return Number.isFinite(parsed) ? parsed : null;
-            })
+            [
+              ...(Array.isArray(asthmaPayload) ? asthmaPayload : []),
+              ...(Array.isArray(gasPayload) ? gasPayload : []),
+            ].map(collectYear)
           )
         )
           .filter(
@@ -543,14 +764,14 @@ export default function Map() {
           .map(String);
 
         setPrevalenceYearOptions((prev) => {
-          const sameLength = prev.length === extractedYears.length;
+          const sameLength = prev.length === combinedYears.length;
           const sameValues =
             sameLength &&
-            prev.every((value, index) => value === extractedYears[index]);
-          return sameValues ? prev : extractedYears;
+            prev.every((value, index) => value === combinedYears[index]);
+          return sameValues ? prev : combinedYears;
         });
       } catch (error) {
-        console.error("Failed to load available asthma years:", error);
+        console.error("Failed to load available dashboard years:", error);
       }
     };
 
@@ -583,6 +804,26 @@ export default function Map() {
       return prevalenceYearOptions[0];
     });
   }, [prevalenceYearOptions]);
+
+  useEffect(() => {
+    if (datasetOptions.length === 0) {
+      return;
+    }
+
+    setSelectedPrevalence((current) => {
+      if (datasetOptions.includes(current)) {
+        return current;
+      }
+
+      return datasetOptions[0] ?? ASTHMA_DATASET_LABEL;
+    });
+  }, [datasetOptions]);
+
+  useEffect(() => {
+    if (isPredictiveSelection) {
+      setSelectedPrevalence(ASTHMA_DATASET_LABEL);
+    }
+  }, [isPredictiveSelection]);
   // Handle confirmation
   const handleConfirm = async () => {
     setIsLoading(true);
@@ -608,7 +849,7 @@ export default function Map() {
         let geoResponse = null;
 
         const hasData = await fetch(
-          `${API_BASE}/get_forecasted_asthma/${targetYear}`
+          `${API_BASE}/get_asthma_dashboard/${targetYear}`
         );
         if (!hasData.ok) {
           const forecastResponse = await fetch(`${API_BASE}/forecast`, {
@@ -627,13 +868,17 @@ export default function Map() {
           geoResponse = hasData;
         }
 
-        const geoJson = await geoResponse.json();
-        const variableName = resolveVariableName(geoJson, selectedPrevalence);
+        const rawGeoJson = await geoResponse.json();
+        const normalizedGeoJson = normalizeFeatureCollection(rawGeoJson);
+        if (!normalizedGeoJson) {
+          throw new Error("Received invalid forecast geo data.");
+        }
+        const variableName = resolveVariableName(
+          normalizedGeoJson,
+          selectedPrevalence
+        );
         setSelectedVariable(variableName);
-        setGeoData(geoJson);
-        const { min, max } = getDataExtents(geoJson, variableName);
-        setMinValue(min);
-        setMaxValue(max);
+        setGeoData(normalizedGeoJson);
 
       } else {
         setPredictiveError(null);
@@ -642,9 +887,20 @@ export default function Map() {
           throw new Error("Select a valid year before confirming.");
         }
 
-        const geoResponse = await fetch(
-          `${API_BASE}/get_forecasted_asthma/${targetYear}`
-        );
+        const datasetSelection =
+          selectedPrevalence ?? ASTHMA_DATASET_LABEL;
+        let geoResponse;
+
+        if (datasetSelection === ASTHMA_DATASET_LABEL) {
+          geoResponse = await fetch(
+            `${API_BASE}/get_asthma_dashboard/${targetYear}`
+          );
+        } else {
+          const encodedVar = encodeURIComponent(datasetSelection);
+          geoResponse = await fetch(
+            `${API_BASE}/get_gas_dashboard/${targetYear}/${encodedVar}`
+          );
+        }
 
         if (!geoResponse.ok) {
           throw new Error(
@@ -652,14 +908,18 @@ export default function Map() {
           );
         }
 
-        const geoJson = await geoResponse.json();
-        const variableName = "Asthma Prevalence%";
+        const rawGeoJson = await geoResponse.json();
+        const normalizedGeoJson = normalizeFeatureCollection(rawGeoJson);
+        if (!normalizedGeoJson) {
+          throw new Error("Received invalid geo data.");
+        }
+        const variableName = resolveVariableName(
+          normalizedGeoJson,
+          datasetSelection
+        );
 
         setSelectedVariable(variableName);
-        setGeoData(geoJson);
-        const { min, max } = getDataExtents(geoJson, variableName);
-        setMinValue(min);
-        setMaxValue(max);
+        setGeoData(normalizedGeoJson);
       }
 
       setConfirmedSelections(true);
@@ -695,36 +955,6 @@ export default function Map() {
         {/* Controls */}
         <div className="min-h-0 p-6 space-y-6 border border-white/10 rounded-2xl shadow-xl bg-white/5">
           {/* <MapControls /> */}
-          {/* Prevalence Type Selection */}
-          <div className="space-y-3">
-            <LabelDot
-              color="indigo-400"
-              text={
-                <span className="inline-flex items-center whitespace-nowrap">
-                  Prevalence Type
-                  {/* brings you to youtube upon clicking */}
-                  <BsGraphUpArrow
-                    onClick={() =>
-                      clickRick(
-                        "https://youtu.be/dQw4w9WgXcQ?si=n8-YzA4eBiVOZp-n"
-                      )
-                    }
-                    className="ml-1 text-xl text-indigo-300 hover:text-indigo-700 transition-colors duration-300"
-                  />
-                </span>
-              }
-            />
-            <StyledSelect
-              label="Type of Prevalence"
-              options={typeOfPrevalence}
-              value={selectedPrevalence}
-              onChange={(e) => {
-                setSelectedPrevalence(e.target.value);
-                setInfo(null); // Reset info when changing selection
-              }}
-            />
-          </div>
-
           {/* Year Selection */}
           <div className="space-y-3">
             <LabelDot
@@ -757,6 +987,41 @@ export default function Map() {
                   setPredictiveError(null);
                   setSelectedOthers("");
                 }
+              }}
+            />
+          </div>
+
+          {/* Gas/Asthma Selection */}
+          <div className="space-y-3">
+            <LabelDot
+              color="indigo-400"
+              text={
+                <span className="inline-flex items-center whitespace-nowrap">
+                  Gas / Asthma Selection 
+                  {/* brings you to youtube upon clicking */}
+                  <BsGraphUpArrow
+                    onClick={() =>
+                      clickRick(
+                        "https://youtu.be/dQw4w9WgXcQ?si=n8-YzA4eBiVOZp-n"
+                      )
+                    }
+                    className="ml-1 text-xl text-indigo-300 hover:text-indigo-700 transition-colors duration-300"
+                  />
+                </span>
+              }
+            />
+            <StyledSelect
+              label="Dataset"
+              options={
+                isPredictiveSelection
+                  ? [ASTHMA_DATASET_LABEL]
+                  : datasetOptions
+              }
+              value={selectedPrevalence}
+              disabled={isPredictiveSelection}
+              onChange={(e) => {
+                setSelectedPrevalence(e.target.value);
+                setInfo(null); // Reset info when changing selection
               }}
             />
           </div>
