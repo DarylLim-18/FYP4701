@@ -824,6 +824,81 @@ export default function Map() {
       setSelectedPrevalence(ASTHMA_DATASET_LABEL);
     }
   }, [isPredictiveSelection]);
+  const hasPreloadedInitialData = useRef(false);
+
+  useEffect(() => {
+    if (hasPreloadedInitialData.current) {
+      return;
+    }
+
+    if (prevalenceYearOptions.length === 0) {
+      return;
+    }
+
+    const preferredYear =
+      prevalenceYearOptions.find(
+        (year) => Number.parseInt(year, 10) === 2011
+      ) ?? prevalenceYearOptions[0];
+
+    const targetYear = Number.parseInt(String(preferredYear), 10);
+    if (!Number.isFinite(targetYear)) {
+      return;
+    }
+
+    const controller = new AbortController();
+
+    const preload = async () => {
+      try {
+        hasPreloadedInitialData.current = true;
+        setIsLoading(true);
+        setSelectedYear(String(preferredYear));
+        setSelectedPrevalence(ASTHMA_DATASET_LABEL);
+        setSelectedOthers("");
+        setPredictiveError(null);
+
+        const response = await fetch(
+          `${API_BASE}/get_asthma_dashboard/${targetYear}`,
+          { signal: controller.signal }
+        );
+
+        if (!response.ok) {
+          throw new Error(
+            `Unable to preload asthma data for ${targetYear}. Status: ${response.status}`
+          );
+        }
+
+        const rawGeoJson = await response.json();
+        const normalizedGeoJson = normalizeFeatureCollection(rawGeoJson);
+        if (!normalizedGeoJson) {
+          throw new Error("Received invalid asthma geo data.");
+        }
+
+        const variableName = resolveVariableName(
+          normalizedGeoJson,
+          ASTHMA_DATASET_LABEL
+        );
+
+        setSelectedVariable(variableName);
+        setGeoData(normalizedGeoJson);
+        setInfo(null);
+        setConfirmedSelections(true);
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          console.error("Failed to preload asthma dashboard:", error);
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    preload();
+
+    return () => {
+      controller.abort();
+    };
+  }, [prevalenceYearOptions]);
   // Handle confirmation
   const handleConfirm = async () => {
     setIsLoading(true);

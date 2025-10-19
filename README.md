@@ -93,6 +93,7 @@ Back-end
 
 1. Open the main branch in the application's respository in your prefered IDE.
 2. Run `main.py` at the root directory.
+3. Before opening the application, call the `/fill_database` API (e.g. `curl http://localhost:8000/fill_database`) to seed the database. Allow at least 10 minutes for the data load to complete before proceeding.
 
 ## Common Issues and Troubleshooting
 
