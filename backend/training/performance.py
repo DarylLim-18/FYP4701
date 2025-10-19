@@ -162,7 +162,7 @@ plt.barh(range(len(imp_df)), imp_df["importance"].values)
 plt.yticks(range(len(imp_df)), imp_df["feature"].values)
 plt.gca().invert_yaxis()
 plt.xlabel("Permutation importance (mean ΔR²)")
-plt.title("Feature Importance (Permutation, Holdout, Top 12 — excl. State/Year)")
+plt.title("Feature Importance")
 plt.tight_layout()
 plt.savefig(REPORT_DIR / "feature_importance_permutation.png", dpi=200)
 
