@@ -8,6 +8,7 @@ import { BsGraphUp } from 'react-icons/bs';
 
 export default function Topbar() {
   const pathname = usePathname();
+  // window.localStorage.setItem('hasVisitedLanding', 'false');
 
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: <FiHome className="w-4 h-4" /> },
