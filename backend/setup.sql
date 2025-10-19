@@ -16,12 +16,9 @@ CREATE TABLE asthma_geodata(
     asthmageo_id int,
     asthmageo_name VARCHAR(255),
     asthmageo_data JSONB,
-    PRIMARY KEY(asthmageo_id)
+    PRIMARY KEY(asthmageo_id),
+    CONSTRAINT unique_asthmageo_name UNIQUE (asthmageo_name);
 );
-
-ALTER TABLE asthma_geodata
-    ADD CONSTRAINT unique_asthmageo_name UNIQUE (asthmageo_name);
-
 
 CREATE TABLE user_geodata(
     usergeo_id int,
@@ -29,4 +26,14 @@ CREATE TABLE user_geodata(
     usergeo_data JSONB,
     PRIMARY KEY(usergeo_id)
 );
+
+
+CREATE TABLE gas_geodata(
+    gasgeo_id SERIAL PRIMARY KEY,
+    gasgeo_year int,
+    gasgeo_name VARCHAR(255),
+    gasgeo_data JSONB,
+    CONSTRAINT UNIQUE_YEAR_NAME UNIQUE (gasgeo_year, gasgeo_name)
+);
+
 
