@@ -1,4 +1,4 @@
-# FYP4701
+# FYP4701/FYP4702
 
 # Analyzing Respiratory Disease with Spatial Analysis and Machine Learning Platform
 
