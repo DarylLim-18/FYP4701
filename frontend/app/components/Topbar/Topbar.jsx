@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import Image from 'next/image';
+import { FaLungs } from 'react-icons/fa'
 import { usePathname } from 'next/navigation';
 import { FiHome, FiDatabase, FiSettings, FiBarChart, FiMap } from 'react-icons/fi';
 import { BsGraphUp } from 'react-icons/bs';
@@ -12,20 +13,24 @@ export default function Topbar() {
     { href: '/dashboard', label: 'Dashboard', icon: <FiHome className="w-4 h-4" /> },
     { href: '/data', label: 'Data', icon: <FiDatabase className="w-4 h-4" /> },
     { href: '/machine-learning', label: 'Machine Learning', icon: <BsGraphUp className="w-4 h-4" /> },
-    { href: '/data-analysis', label: 'Data Analysis', icon: <FiBarChart className="w-4 h-4" /> },
-    { href: '/modular-map', label: 'Modular Map', icon: <FiMap className="w-4 h-4" /> },
-    { href: '/settings', label: 'Settings', icon: <FiSettings className="w-4 h-4" /> },
+    // { href: '/data-analysis', label: 'Data Analysis', icon: <FiBarChart className="w-4 h-4" /> },
+    { href: '/modular-map', label: 'Spatial Analysis', icon: <FiMap className="w-4 h-4" /> },
   ];
 
   return (
     <header className="fixed top-0 left-0 right-0 z-20 border-b border-white/10 bg-gray-900/70 backdrop-blur-md">
       <div className="w-full h-14 pl-8 pr-4 flex items-center justify-between">
         {/* Brand */}
-        <Link href="/dashboard" className="flex items-center gap-2">
-          <div className="relative w-8 h-8">
-            <Image src="/k-logo.jpg" alt="Kodi" fill className="object-contain rounded" />
+        <Link href="/" className="flex items-center gap-2">
+          <div className="bg-teal-600 text-white rounded-full">
+            <FaLungs size={30} />
           </div>
-          <span className="text-white font-semibold">Kodi</span>
+          <div
+            style={{ background: 'rgba(255,255,255,0.1)', display: 'flex', gap: '8px' }}
+          ></div>
+          <span className="text-2xl font-bold text-white">
+            AsthmaAssist
+          </span>
         </Link>
 
         {/* Nav */}
