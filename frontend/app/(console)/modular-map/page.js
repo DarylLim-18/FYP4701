@@ -6,6 +6,40 @@ import ResultsPanel from "@/app/components/ModularMap/ResultsPanel";
 import DatasetPickerModal from "@/app/components/ModularMap/DatasetPickerModal";
 import { BASE_URL, defaultSimplifyForLevel, normalizeISO3 } from "@/app/components/ModularMap/utils";
 
+const RESERVED_PROP_KEYS = new Set([
+  "code",
+  "name",
+  "country",
+  "state",
+  "county",
+  "cluster_label",
+  "local_I",
+  "local_i",
+  "localMoran",
+  "local_moran",
+  "p_value",
+  "pvalue",
+  "pValue"
+]);
+
+function deriveVariableFromGeojson(geojson) {
+  const features = Array.isArray(geojson?.features) ? geojson.features : [];
+  for (const feature of features) {
+    const props = feature?.properties;
+    if (!props || typeof props !== "object") continue;
+
+    const numericKey = Object.entries(props).find(([key, value]) => {
+      if (RESERVED_PROP_KEYS.has(key)) return false;
+      return typeof value === "number" && Number.isFinite(value);
+    });
+    if (numericKey) return numericKey[0];
+
+    const fallbackKey = Object.keys(props).find((key) => !RESERVED_PROP_KEYS.has(key));
+    if (fallbackKey) return fallbackKey;
+  }
+  return null;
+}
+
 export default function ModularMapPage() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -70,14 +104,19 @@ export default function ModularMapPage() {
 
   useEffect(() => {
     (async () => {
-      const data = await (await fetch(`${BASE_URL}/cache`)).json();
-      if (data){
+      try {
+        const res = await fetch(`${BASE_URL}/cache`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!data) return;
         setGeojson(data);
-        const lastVar = localStorage.getItem("modularmap:lastVar");
-        if (lastVar) {
-          setForm(p => ({ ...p, variable:lastVar}));
+        const inferredVar = deriveVariableFromGeojson(data);
+        if (inferredVar) {
+          setForm((p) => ({ ...p, variable: inferredVar }));
         }
-      } 
+      } catch {
+        // ignore cache load errors
+      }
     })();
   }, []);
 
