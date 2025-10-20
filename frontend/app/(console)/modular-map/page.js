@@ -49,6 +49,7 @@ export default function ModularMapPage() {
   const [runError, setRunError] = useState(null);
   const [geojson, setGeojson] = useState(null);
   const [savedUrl, setSavedUrl] = useState(null);
+  const [errorModalEntered, setErrorModalEntered] = useState(false);
 
   const [form, setForm] = useState({
     level: "adm2",
@@ -121,6 +122,14 @@ export default function ModularMapPage() {
       }
     })();
   }, []);
+
+  useEffect(() => {
+    if (runError) {
+      const rafId = requestAnimationFrame(() => setErrorModalEntered(true));
+      return () => cancelAnimationFrame(rafId);
+    }
+    setErrorModalEntered(false);
+  }, [runError]);
 
   const errors = useMemo(() => {
     const e = {};
@@ -218,6 +227,31 @@ export default function ModularMapPage() {
 
   return (
     <div className="h-full overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
+      {runError && (
+        <div
+          className={`fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4 transition-opacity duration-300 ${errorModalEntered ? "opacity-100" : "opacity-0"}`}
+          onClick={() => setRunError(null)}
+        >
+          <div
+            className={`w-full max-w-md rounded-2xl bg-slate-900 p-6 shadow-2xl border border-white/10 origin-center transition-all duration-300 ease-out ${errorModalEntered ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h2 className="text-xl font-semibold text-white mb-2">Run Failed</h2>
+            <p className="text-sm text-slate-200 mb-6">
+              Please check your inputs and ensure each required field uses the correct column.
+            </p>
+            <div className="flex justify-end">
+              <button
+                type="button"
+                className="rounded-lg bg-white/10 hover:bg-white/20 px-4 py-2 text-sm font-medium text-white transition"
+                onClick={() => setRunError(null)}
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <main className="h-full grid grid-cols-1 lg:grid-cols-4 gap-6 p-6 overflow-hidden">
         {/* Controls */}
         <div className="min-h-0">
