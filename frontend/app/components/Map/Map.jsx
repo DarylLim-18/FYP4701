@@ -11,7 +11,6 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { FiPlay, FiBarChart2, FiAlertCircle } from "react-icons/fi";
-import { FaStarOfDavid } from "react-icons/fa6";
 import { BsStars, BsClockHistory, BsGraphUpArrow } from "react-icons/bs";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
@@ -509,7 +508,6 @@ const Legend = ({ minValue, maxValue }) => {
   );
 };
 
-// LabelDot component from your friend's code
 function LabelDot({ color, text }) {
   const cls =
     {
@@ -937,7 +935,7 @@ export default function Map() {
           }
 
           geoResponse = await fetch(
-            `${API_BASE}/get_forecasted_asthma/${targetYear}`
+            `${API_BASE}/get_asthma_dashboard/${targetYear}`
           );
         } else {
           geoResponse = hasData;

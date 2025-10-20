@@ -376,7 +376,7 @@ const Home = () => {
                             <ScrollRevealSection>
                                 <div className="section-header">
                                     <h2 className="section-title">
-                                        Features: Dashboard
+                                        Dashboard
                                     </h2>
                                     <p className="section-subtitle">
                                         Map historic asthma and emissions trends. Forecast prevalence in a click.
@@ -421,7 +421,7 @@ const Home = () => {
                                         "Flexible legend for data of any range",
                                         "Wide range of colors"
                                     ]}
-                                    image="configure.png"
+                                    image="dashboard_map.png"
                                 />
 
                                 <FeatureCard
@@ -438,7 +438,7 @@ const Home = () => {
                                         "Trained on historical data from 2011-2024",
                                         "Prediction extends 2030"
                                     ]}
-                                    image="https://images.unsplash.com/photo-1600267165477-6d4cc741b379"
+                                    image="prediction.png"
                                 />
                             </div>
                         </div>
@@ -455,7 +455,7 @@ const Home = () => {
                             <ScrollRevealSection>
                                 <div className="section-header">
                                     <h2 className="section-title">
-                                        Features: Data
+                                        Storage
                                     </h2>
                                     <p className="section-subtitle">
                                         Keep study datasets organised, fast, and private.
@@ -553,7 +553,7 @@ const Home = () => {
                             <ScrollRevealSection>
                                 <div className="section-header">
                                     <h2 className="section-title">
-                                        Features: Machine Learning
+                                        Machine Learning
                                     </h2>
                                     <p className="section-subtitle">
                                         Train nine algorithms end-to-end without leaving the UI.
@@ -681,7 +681,7 @@ const Home = () => {
                             <ScrollRevealSection>
                                 <div className="section-header">
                                     <h2 className="section-title">
-                                        Features: Spatial Analysis
+                                        Spatial Analysis
                                     </h2>
                                     <p className="section-subtitle">
                                         Turn your datasets into Local Moran hotspot maps in minutes.
