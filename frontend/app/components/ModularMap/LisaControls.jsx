@@ -3,7 +3,6 @@
 import { FiAlertCircle, FiBarChart2, FiPlay } from "react-icons/fi";
 import HeaderSelect from "./HeaderSelect";
 import RadioGroup from "./RadioGroup";
-import Slider from "./Slider";
 import DatasetSelectCard from "./DatasetSelectCard";
 
 export default function LisaControls({
@@ -244,46 +243,18 @@ export default function LisaControls({
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-gray-300">Permutations</label>
-                <select
-                  value={form.perm}
-                  onChange={(e) => set("perm")(parseInt(e.target.value, 10))}
-                  className="w-full rounded-lg bg-slate-800 border border-white/10 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
-                >
-                  {[199, 499, 999].map((n) => (
-                    <option key={n} value={n}>{n}</option>
-                  ))}
-                </select>
-              </div>
-
-              <Slider
-                label="Significance Level (α)"
-                value={form.alpha}
-                min={0.001}
-                max={0.2}
-                step={0.001}
-                onChange={(v) => set("alpha")(v)}
-                hint="Default: 0.05"
-              />
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-gray-300">Permutations</label>
+              <select
+                value={form.perm}
+                onChange={(e) => set("perm")(parseInt(e.target.value, 10))}
+                className="w-full rounded-lg bg-slate-800 border border-white/10 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+              >
+                {[199, 499, 999].map((n) => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
             </div>
-
-            <Slider
-              label="Polygon Simplification"
-              value={form.simplifyTol}
-              min={0.0005}
-              max={0.12}
-              step={0.0005}
-              onChange={(v) => set("simplifyTol")(v)}
-              hint={
-                form.level === "adm2"
-                  ? "Counties: 0.002–0.005"
-                  : form.level === "adm1"
-                  ? "States: 0.01–0.02"
-                  : "Countries: 0.05–0.1"
-              }
-            />
           </div>
 
           {/* Run */}
